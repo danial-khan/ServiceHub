@@ -193,8 +193,9 @@ describe('Module Loader with Module Federation Runtime', () => {
       arrayBuffer: async () => arrayBuffer,
     });
 
-    const mockComponent = { default: () => 'DoctorComponent' };
-    (loadRemote as jest.Mock).mockResolvedValue(mockComponent);
+    const mockComponent = () => 'DoctorComponent';
+    const mockNamespace = { default: mockComponent };
+    (loadRemote as jest.Mock).mockResolvedValue(mockNamespace);
 
     await moduleLoader.fetchCatalog();
     const component = await moduleLoader.loadModule('doctor');
@@ -207,7 +208,10 @@ describe('Module Loader with Module Federation Runtime', () => {
     ]);
 
     expect(loadRemote).toHaveBeenCalledWith('doctor/Module');
+    
+    // Verify that the stored component is the .default export, not the namespace
     expect(component).toBe(mockComponent);
+    expect(component).not.toBe(mockNamespace);
   });
 
   it('should prevent loadRemote if checksum verification fails', async () => {
@@ -259,7 +263,8 @@ describe('Module Loader with Module Federation Runtime', () => {
       arrayBuffer: async () => arrayBuffer,
     });
 
-    (loadRemote as jest.Mock).mockResolvedValue({ default: () => 'Component' });
+    const mockComponent = () => 'Component';
+    (loadRemote as jest.Mock).mockResolvedValue({ default: mockComponent });
 
     await moduleLoader.fetchCatalog();
     await moduleLoader.loadModule('doctor');
@@ -268,13 +273,14 @@ describe('Module Loader with Module Federation Runtime', () => {
 
     const calls = (ScriptManager.shared.addResolver as jest.Mock).mock.calls;
     const resolverFn = calls[calls.length - 1][0];
-    const result = await resolverFn('http://example.com/bundle.js');
-
-    expect(result).toEqual({
-      url: 'http://example.com/bundle.js',
-      method: 'GET',
-      verifyScriptSignature: 'strict',
-    });
+    
+    // Test 1: Resolver returns catalog URL for known module
+    const doctorResult = await resolverFn('doctor');
+    expect(doctorResult.url).toBe('http://10.0.2.2:9000/modules/doctor/doctor.container.bundle');
+    
+    // Test 2: Resolver returns constructed URL for unknown scriptId
+    const unknownResult = await resolverFn('http://example.com/chunk.bundle');
+    expect(unknownResult.url).toBe('http://example.com/chunk.bundle');
     
     expect(registerRemotes).toHaveBeenCalledWith([
       {

@@ -30,24 +30,50 @@ class ModuleLoader {
   private catalog: ModuleCatalog | null = null;
   private resolverRegistered = false;
   private loadedModules = new Map<string, any>();
+  private remoteBaseUrls = new Map<string, string>();
 
   async initialize() {
     if (this.resolverRegistered) return;
     
-    ScriptManager.shared.addResolver(async (scriptId: string): Promise<ScriptLocator> => {
+    ScriptManager.shared.addResolver(async (scriptId: string, caller?: string): Promise<ScriptLocator> => {
+      const verifyScriptSignature = __DEV__ ? 'off' : 'strict';
+      
+      // Check if this is a remote container entry
+      const module = this.getModule(scriptId);
+      if (module) {
+        // This is a remote entry URL from the catalog
+        return {
+          url: module.url,
+          method: 'GET',
+          verifyScriptSignature,
+        };
+      }
+      
+      // This is a chunk request - need to resolve relative to the caller's base URL
+      if (caller) {
+        const callerBaseUrl = this.remoteBaseUrls.get(caller);
+        if (callerBaseUrl) {
+          const { Script } = await import('@callstack/repack/client');
+          return {
+            url: Script.getRemoteURL(`${callerBaseUrl}/${scriptId}`),
+            method: 'GET',
+            verifyScriptSignature,
+          };
+        }
+      }
+      
+      // Fallback: treat scriptId as a full URL
       return {
         url: scriptId,
         method: 'GET',
-        verifyScriptSignature: 'strict',
+        verifyScriptSignature,
       };
     });
     
     this.resolverRegistered = true;
 
-    init({
-      name: 'ServiceHub',
-      remotes: [],
-    });
+    // Note: We don't call init() here because the shell's ModuleFederationPluginV2
+    // already creates the runtime instance. Calling init() twice can cause conflicts.
   }
 
   async fetchCatalog(): Promise<ModuleCatalog> {
@@ -106,6 +132,10 @@ class ModuleLoader {
 
     await this.verifyChecksum(moduleId);
 
+    // Store the base URL for this remote (for chunk resolution)
+    const baseUrl = module.url.substring(0, module.url.lastIndexOf('/'));
+    this.remoteBaseUrls.set(moduleId, baseUrl);
+
     registerRemotes([
       {
         name: moduleId,
@@ -113,8 +143,15 @@ class ModuleLoader {
       },
     ]);
 
-    const component = await loadRemote(`${moduleId}/Module`);
+    const moduleNamespace = await loadRemote(`${moduleId}/Module`) as { default?: any };
     
+    if (!moduleNamespace || !moduleNamespace.default) {
+      throw new Error(
+        `Module ${moduleId} did not export a default component. Check that the remote's index.tsx has 'export default'.`
+      );
+    }
+    
+    const component = moduleNamespace.default;
     this.loadedModules.set(moduleId, component);
     return component;
   }

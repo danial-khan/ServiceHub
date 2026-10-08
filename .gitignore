@@ -76,4 +76,4 @@ yarn-error.log
 .mf/
 module-host/public/modules/
 .keys/
-*.pem
+.keys/private.pem
