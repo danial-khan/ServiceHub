@@ -1,88 +1,69 @@
-#!/usr/bin/env node
-
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const MODULE_NAME = process.argv[2];
-const VERSION = process.argv[3] || '1.0.0';
-const VALID_MODULES = ['doctor', 'barber', 'food'];
-
-const MODULE_ID_MAP = {
-  doctor: 'DoctorModule',
-  barber: 'BarberModule',
-  food: 'FoodModule',
-};
-
-const MODULE_PORT_MAP = {
-  doctor: 9001,
-  barber: 9002,
-  food: 9003,
-};
-
-if (!MODULE_NAME || !VALID_MODULES.includes(MODULE_NAME)) {
-  console.error(`Usage: node publish-module.js <module-name> [version]`);
-  console.error(`Valid modules: ${VALID_MODULES.join(', ')}`);
+const moduleName = process.argv[2];
+if (!moduleName) {
+  console.error('Usage: node publish-module.js <module-name>');
   process.exit(1);
 }
 
-console.log(`\n📤 Publishing ${MODULE_NAME} module (v${VERSION})...\n`);
+const sourcePath = path.join(__dirname, '..', 'build', 'modules', moduleName, 'android');
+const destPath = path.join(__dirname, '..', 'module-host', 'public', 'modules', moduleName);
+const catalogPath = path.join(__dirname, '..', 'module-host', 'public', 'catalog.json');
 
-const catalogPath = path.join(__dirname, '../module-host/public/catalog.json');
-const bundlePath = path.join(
-  __dirname,
-  `../build/modules/${MODULE_NAME}/android/index.bundle`
-);
+// Ensure destination directory exists
+fs.mkdirSync(destPath, { recursive: true });
 
-if (!fs.existsSync(bundlePath)) {
-  console.error('Bundle not found. Please build the module first.');
+// Copy all bundle files
+const files = fs.readdirSync(sourcePath);
+const bundles = files.filter(f => f.endsWith('.bundle'));
+
+console.log(`📦 Publishing ${moduleName} module...`);
+
+// Copy bundles
+for (const bundle of bundles) {
+  const src = path.join(sourcePath, bundle);
+  const dest = path.join(destPath, bundle);
+  fs.copyFileSync(src, dest);
+  console.log(`   Copied ${bundle}`);
+}
+
+// Compute SHA-256 for container bundle
+const containerFile = bundles.find(b => b.includes('.container.bundle'));
+if (!containerFile) {
+  console.error(`❌ No container bundle found for ${moduleName}`);
   process.exit(1);
 }
 
-const stats = fs.statSync(bundlePath);
-const bundleContent = fs.readFileSync(bundlePath, 'utf-8');
-const checksum = crypto.createHash('md5').update(bundleContent).digest('hex').substring(0, 8);
+const containerPath = path.join(destPath, containerFile);
+const containerData = fs.readFileSync(containerPath);
+const hash = crypto.createHash('sha256').update(containerData).digest('hex');
+const size = containerData.length;
 
-const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
+console.log(`   SHA-256: ${hash}`);
+console.log(`   Size: ${size} bytes`);
 
-const moduleId = MODULE_ID_MAP[MODULE_NAME];
-const port = MODULE_PORT_MAP[MODULE_NAME];
-const existingModuleIndex = catalog.modules.findIndex((m) => m.id === moduleId);
-
-const moduleMetadata = {
-  id: moduleId,
-  name: MODULE_NAME === 'doctor' ? 'Doctor Booking' 
-       : MODULE_NAME === 'barber' ? 'Barber Services' 
-       : 'Food Delivery',
-  description:
-    MODULE_NAME === 'doctor'
-      ? 'Book appointments with doctors across specialties'
-      : MODULE_NAME === 'barber'
-      ? 'Book haircuts and grooming services'
-      : 'Order food from popular restaurant chains',
-  version: VERSION,
-  bundleUrl: `http://localhost:${port}/index.bundle`,
-  size: stats.size,
-  checksum,
-  minShellVersion: '1.0.0',
-  icon: MODULE_NAME === 'doctor' ? 'medical' : MODULE_NAME === 'barber' ? 'scissors' : 'restaurant',
-};
-
-if (existingModuleIndex >= 0) {
-  catalog.modules[existingModuleIndex] = moduleMetadata;
-  console.log(`✓ Updated ${moduleId} in catalog`);
-} else {
-  catalog.modules.push(moduleMetadata);
-  console.log(`✓ Added ${moduleId} to catalog`);
+// Update catalog
+let catalog = { modules: [] };
+if (fs.existsSync(catalogPath)) {
+  catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
 }
 
-catalog.lastUpdated = Date.now();
+// Remove old entry if exists
+catalog.modules = catalog.modules.filter(m => m.id !== moduleName);
+
+// Add new entry
+catalog.modules.push({
+  id: moduleName,
+  name: moduleName.charAt(0).toUpperCase() + moduleName.slice(1),
+  version: '1.0.0',
+  url: `http://localhost:9000/modules/${moduleName}/${containerFile}`,
+  size,
+  checksum: hash,
+  platform: 'android',
+  updatedAt: new Date().toISOString(),
+});
 
 fs.writeFileSync(catalogPath, JSON.stringify(catalog, null, 2));
-
-console.log(`\n✓ Module published successfully`);
-console.log(`  Version: ${VERSION}`);
-console.log(`  Size: ${(stats.size / 1024).toFixed(2)} KB`);
-console.log(`  Checksum: ${checksum}`);
-console.log(`  Bundle URL: ${moduleMetadata.bundleUrl}`);
-console.log(`\nTo serve modules, run: cd module-host && npm start\n`);
+console.log(`✅ ${moduleName} module published successfully`);

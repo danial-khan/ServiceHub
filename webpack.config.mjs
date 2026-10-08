@@ -1,5 +1,4 @@
 import path from 'path';
-import TerserPlugin from 'terser-webpack-plugin';
 import * as Repack from '@callstack/repack';
 
 const dirname = Repack.getDirname(import.meta.url);
@@ -9,26 +8,17 @@ export default (env) => {
     mode = 'development',
     context = dirname,
     entry = './index.js',
-    platform = process.env.PLATFORM,
+    platform = process.env.PLATFORM || 'android',
     minimize = mode === 'production',
     devServer = undefined,
     reactNativePath = new URL('./node_modules/react-native', import.meta.url).pathname,
   } = env;
 
-  if (!platform) {
-    throw new Error('Missing platform');
-  }
-
   return {
     mode,
     devtool: false,
     context,
-    entry: [
-      ...Repack.getInitializationEntries(reactNativePath, {
-        hmr: devServer && devServer.hmr,
-      }),
-      entry,
-    ],
+    entry: entry,
     resolve: {
       ...Repack.getResolveOptions(platform),
       alias: {
@@ -38,7 +28,7 @@ export default (env) => {
     output: {
       clean: true,
       hashFunction: 'xxhash64',
-      path: path.join(dirname, 'build/generated', platform),
+      path: path.join(dirname, 'build/shell', platform),
       filename: 'shell.bundle',
       chunkFilename: '[name].[chunkhash:8].chunk.bundle',
       publicPath: Repack.getPublicPath({ platform, devServer }),
@@ -46,12 +36,7 @@ export default (env) => {
     },
     optimization: {
       minimize,
-      minimizer: [
-        new TerserPlugin({
-          test: /\.(jsx?|tsx?)$/,
-          extractComments: false,
-        }),
-      ],
+      chunkIds: 'named',
     },
     module: {
       rules: [
@@ -98,18 +83,6 @@ export default (env) => {
             singleton: true,
             eager: true,
             requiredVersion: '0.87.1',
-          },
-          '@react-navigation/native': {
-            singleton: true,
-            eager: true,
-          },
-          '@react-navigation/native-stack': {
-            singleton: true,
-            eager: true,
-          },
-          zustand: {
-            singleton: true,
-            eager: true,
           },
           '@servicehub/core': {
             singleton: true,

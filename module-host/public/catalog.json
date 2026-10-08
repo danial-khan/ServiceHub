@@ -1,38 +1,38 @@
 {
   "version": "1.0.0",
-  "lastUpdated": 1699564800000,
+  "lastUpdated": "2026-10-08T21:35:00.000Z",
   "modules": [
     {
-      "id": "DoctorModule",
+      "id": "doctor",
       "name": "Doctor Booking",
       "description": "Book appointments with doctors across specialties",
       "version": "1.0.0",
-      "bundleUrl": "http://localhost:9001/index.bundle",
-      "size": 524288,
-      "checksum": "a1b2c3d4",
-      "minShellVersion": "1.0.0",
+      "url": "http://localhost:9000/modules/doctor/doctor.container.bundle",
+      "size": 28912,
+      "checksum": "5d643e45f601b9c4fafcacdad8973f69f17e8188ff12cf082b2d5896235f23fe",
+      "platform": "android",
       "icon": "medical"
     },
     {
-      "id": "BarberModule",
+      "id": "barber",
       "name": "Barber Services",
       "description": "Book haircuts and grooming services",
       "version": "1.0.0",
-      "bundleUrl": "http://localhost:9002/index.bundle",
-      "size": 491520,
-      "checksum": "e5f6g7h8",
-      "minShellVersion": "1.0.0",
+      "url": "http://localhost:9000/modules/barber/barber.container.bundle",
+      "size": 28912,
+      "checksum": "650f2abf84eff783058483f3c16a69a3f5a726a5812f4d3e21eb9db32843b394",
+      "platform": "android",
       "icon": "scissors"
     },
     {
-      "id": "FoodModule",
+      "id": "food",
       "name": "Food Delivery",
       "description": "Order food from popular restaurant chains",
       "version": "1.0.0",
-      "bundleUrl": "http://localhost:9003/index.bundle",
-      "size": 557056,
-      "checksum": "i9j0k1l2",
-      "minShellVersion": "1.0.0",
+      "url": "http://localhost:9000/modules/food/food.container.bundle",
+      "size": 28892,
+      "checksum": "7d90930a39d3f20d9c2ce0d771036b056a1a464f346b80c5a8fd052dd373c4c7",
+      "platform": "android",
       "icon": "restaurant"
     }
   ]
