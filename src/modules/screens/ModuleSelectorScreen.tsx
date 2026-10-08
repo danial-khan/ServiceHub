@@ -1,16 +1,9 @@
 import React, { useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { Button, Card, Text } from '@servicehub/core';
 import { theme } from '@servicehub/core';
-import { moduleLoader } from '../moduleLoader';
 import { useModuleStore } from '../store';
-import { useAuthStore } from '../../auth';
+import { ModuleMetadata } from '../moduleLoader';
 
 interface ModuleSelectorScreenProps {
   onModuleSelect: (moduleId: string) => void;
@@ -21,99 +14,107 @@ export const ModuleSelectorScreen: React.FC<ModuleSelectorScreenProps> = ({
   onModuleSelect,
   onNavigateToMarketplace,
 }) => {
-  const { user, signOut } = useAuthStore();
-  const { getInstalledModules, loadModule } = useModuleLoader();
-  const installedModules = getInstalledModules();
+  const availableModules = useModuleStore((state) => state.availableModules);
+  const installedModules = useModuleStore((state) => state.installedModules);
+  const downloadingModules = useModuleStore((state) => state.downloadingModules);
+  const error = useModuleStore((state) => state.error);
+  const installModule = useModuleStore((state) => state.installModule);
+  const uninstallModule = useModuleStore((state) => state.uninstallModule);
 
-  const handleModulePress = async (moduleId: string) => {
+  const handleInstall = async (moduleId: string) => {
     try {
-      await loadModule(moduleId);
-      onModuleSelect(moduleId);
-    } catch (error) {
-      console.error('Failed to load module:', error);
+      await installModule(moduleId);
+      Alert.alert('Success', `${moduleId} module installed successfully`);
+    } catch (err) {
+      Alert.alert('Error', `Failed to install module: ${err}`);
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text variant="h2">ServiceHub</Text>
-          <Text variant="bodySmall" color={theme.colors.textSecondary}>
-            Welcome, {user?.name || 'Guest'}
-          </Text>
-        </View>
-        <Button
-          title="Sign Out"
-          variant="outline"
-          size="small"
-          onPress={signOut}
-        />
-      </View>
+  const handleUninstall = async (moduleId: string) => {
+    try {
+      await uninstallModule(moduleId);
+      Alert.alert('Success', `${moduleId} module removed`);
+    } catch (err) {
+      Alert.alert('Error', `Failed to remove module: ${err}`);
+    }
+  };
 
-      {installedModules.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text variant="h3" align="center">
-            No Modules Installed
-          </Text>
-          <Text
-            variant="body"
-            color={theme.colors.textSecondary}
-            align="center"
-            style={styles.emptyText}
-          >
-            Browse the marketplace to download service modules
-          </Text>
-          <Button
-            title="Browse Modules"
-            onPress={onNavigateToMarketplace}
-            fullWidth
-          />
-        </View>
-      ) : (
-        <>
-          <View style={styles.section}>
-            <Text variant="h3">Your Services</Text>
-            <Text variant="bodySmall" color={theme.colors.textSecondary}>
-              Select a service to continue
+  const renderModule = ({ item }: { item: ModuleMetadata }) => {
+    const isInstalled = !!installedModules[item.id];
+    const isDownloading = downloadingModules[item.id];
+
+    return (
+      <Card style={styles.moduleCard}>
+        <View style={styles.moduleHeader}>
+          <View style={styles.moduleInfo}>
+            <Text variant="h3">{item.name}</Text>
+            {item.description && (
+              <Text variant="body" style={styles.description}>
+                {item.description}
+              </Text>
+            )}
+            <Text variant="caption" style={styles.version}>
+              Version {item.version}
             </Text>
           </View>
+        </View>
 
-          <FlatList
-            data={installedModules}
-            keyExtractor={(item) => item.metadata.id}
-            contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => handleModulePress(item.metadata.id)}
-              >
-                <Card style={styles.moduleCard}>
-                  <View style={styles.moduleHeader}>
-                    <View style={styles.iconPlaceholder}>
-                      <Text variant="h3">{item.metadata.name[0]}</Text>
-                    </View>
-                    <View style={styles.moduleInfo}>
-                      <Text variant="h4">{item.metadata.name}</Text>
-                      <Text variant="bodySmall" color={theme.colors.textSecondary}>
-                        {item.metadata.description}
-                      </Text>
-                      <Text variant="caption">v{item.metadata.version}</Text>
-                    </View>
-                  </View>
-                </Card>
-              </TouchableOpacity>
-            )}
-            ListFooterComponent={
+        <View style={styles.actions}>
+          {isDownloading ? (
+            <ActivityIndicator size="small" />
+          ) : isInstalled ? (
+            <>
               <Button
-                title="+ Browse More Modules"
-                variant="outline"
-                onPress={onNavigateToMarketplace}
-                fullWidth
+                title="Open"
+                onPress={() => onModuleSelect(item.id)}
+                variant="primary"
+                style={styles.button}
               />
-            }
-          />
-        </>
-      )}
+              <Button
+                title="Remove"
+                onPress={() => handleUninstall(item.id)}
+                variant="outline"
+                style={styles.button}
+              />
+            </>
+          ) : (
+            <Button
+              title="Install"
+              onPress={() => handleInstall(item.id)}
+              variant="primary"
+              style={styles.button}
+            />
+          )}
+        </View>
+      </Card>
+    );
+  };
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text variant="body" style={styles.errorText}>
+          {error}
+        </Text>
+        <Button title="Go to Marketplace" onPress={onNavigateToMarketplace} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={availableModules}
+        renderItem={renderModule}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+      />
+      <Button
+        title="Browse Marketplace"
+        onPress={onNavigateToMarketplace}
+        variant="outline"
+        style={styles.marketplaceButton}
+      />
     </View>
   );
 };
@@ -123,49 +124,43 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    padding: theme.spacing.lg,
-    paddingTop: theme.spacing.xxl,
-    backgroundColor: theme.colors.surface,
-    ...theme.shadows.sm,
-  },
-  section: {
-    padding: theme.spacing.lg,
-    gap: theme.spacing.xs,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: theme.spacing.xxl,
-    gap: theme.spacing.md,
-  },
-  emptyText: {
-    marginBottom: theme.spacing.md,
-  },
-  listContent: {
-    padding: theme.spacing.lg,
-    gap: theme.spacing.md,
+  list: {
+    padding: theme.spacing.md,
   },
   moduleCard: {
     marginBottom: theme.spacing.md,
   },
   moduleHeader: {
     flexDirection: 'row',
-    gap: theme.spacing.md,
-  },
-  iconPlaceholder: {
-    width: 60,
-    height: 60,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.sm,
   },
   moduleInfo: {
     flex: 1,
-    gap: theme.spacing.xs,
+  },
+  description: {
+    marginTop: theme.spacing.xs,
+    color: theme.colors.textSecondary,
+  },
+  version: {
+    marginTop: theme.spacing.xs,
+    color: theme.colors.textSecondary,
+  },
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: theme.spacing.sm,
+  },
+  button: {
+    minWidth: 100,
+  },
+  marketplaceButton: {
+    margin: theme.spacing.md,
+  },
+  errorText: {
+    color: theme.colors.error,
+    textAlign: 'center',
+    margin: theme.spacing.md,
   },
 });

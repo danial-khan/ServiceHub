@@ -64,12 +64,15 @@ describe('Module Loader with Real Fetch', () => {
 
   it('should validate SHA-256 checksum correctly', async () => {
     const data = 'test module data';
-    const buffer = Buffer.from(data, 'utf-8');
-    // Compute hash the same way moduleLoader does (from Uint8Array)
-    const uint8Array = new Uint8Array(buffer);
-    const correctHash = require('js-sha256')(uint8Array);
+    // Create ArrayBuffer the same way fetch returns it
+    const encoder = new TextEncoder();
+    const uint8Array = encoder.encode(data);
+    const arrayBuffer = uint8Array.buffer.slice(uint8Array.byteOffset, uint8Array.byteOffset + uint8Array.byteLength);
+    
+    // Compute hash the same way moduleLoader does
+    const sha256 = require('js-sha256');
+    const correctHash = sha256(new Uint8Array(arrayBuffer));
 
-    // Setup catalog
     const mockCatalog: ModuleCatalog = {
       version: '1.0.0',
       lastUpdated: '2026-10-08',
@@ -78,7 +81,7 @@ describe('Module Loader with Real Fetch', () => {
           id: 'test',
           name: 'Test',
           url: 'http://localhost:9000/test.bundle',
-          size: buffer.length,
+          size: arrayBuffer.byteLength,
           checksum: correctHash,
           platform: 'android',
           version: '1.0.0',
@@ -93,14 +96,14 @@ describe('Module Loader with Real Fetch', () => {
       })
       .mockResolvedValueOnce({
         ok: true,
-        arrayBuffer: async () => buffer.buffer,
+        arrayBuffer: async () => arrayBuffer,
       });
 
     await moduleLoader.fetchCatalog();
     const downloadedBuffer = await moduleLoader.downloadAndVerify('test');
     
     expect(downloadedBuffer).toBeDefined();
-    expect(downloadedBuffer.byteLength).toBe(buffer.length);
+    expect(downloadedBuffer.byteLength).toBe(arrayBuffer.byteLength);
   });
 
   it('should reject on checksum mismatch', async () => {

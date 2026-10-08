@@ -14,7 +14,7 @@
     "forceConsistentCasingInFileNames": true,
     "ignoreDeprecations": "6.0"
   },
-  "include": ["src/modules/**/*", "src/auth/**/*", "index.js"],
+  "include": ["src/**/*", "index.js"],
   "exclude": [
     "node_modules",
     "babel.config.js",
