@@ -4,8 +4,8 @@ import {
   StyleSheet,
   FlatList,
 } from 'react-native';
-import { Button, Card, Text } from '../../../src/core';
-import { theme } from '../../../src/core/theme';
+import { Button, Card, Text } from '@servicehub/core';
+import { theme } from '@servicehub/core';
 import { useDoctorStore } from '../store';
 import { Appointment } from '../data';
 

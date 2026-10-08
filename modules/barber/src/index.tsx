@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { Button, Card, Text } from '../../../src/core';
-import { theme } from '../../../src/core/theme';
+import { Button, Card, Text } from '@servicehub/core';
+import { theme } from '@servicehub/core';
 import { BARBERSHOPS, SERVICES, BARBERS, TIME_SLOTS, Barbershop, BarberService, Barber } from './data';
 import { useBarberStore } from './store';
 

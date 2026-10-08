@@ -4,10 +4,6 @@ import * as Repack from '@callstack/repack';
 
 const dirname = Repack.getDirname(import.meta.url);
 
-/**
- * Shell app webpack configuration with Module Federation
- * This is the host application that loads remote modules on demand
- */
 export default (env) => {
   const {
     mode = 'development',
@@ -16,11 +12,7 @@ export default (env) => {
     platform = process.env.PLATFORM,
     minimize = mode === 'production',
     devServer = undefined,
-    bundleFilename = undefined,
-    sourceMapFilename = undefined,
-    assetsPath = undefined,
-    reactNativePath = new URL('./node_modules/react-native', import.meta.url)
-      .pathname,
+    reactNativePath = new URL('./node_modules/react-native', import.meta.url).pathname,
   } = env;
 
   if (!platform) {
@@ -40,15 +32,15 @@ export default (env) => {
     resolve: {
       ...Repack.getResolveOptions(platform),
       alias: {
-        '@': path.join(dirname, 'src'),
+        '@servicehub/core': path.join(dirname, 'packages/core/src'),
       },
     },
     output: {
       clean: true,
       hashFunction: 'xxhash64',
       path: path.join(dirname, 'build/generated', platform),
-      filename: 'index.bundle',
-      chunkFilename: '[name].chunk.bundle',
+      filename: 'shell.bundle',
+      chunkFilename: '[name].[chunkhash:8].chunk.bundle',
       publicPath: Repack.getPublicPath({ platform, devServer }),
       uniqueName: 'ServiceHubShell',
     },
@@ -93,18 +85,36 @@ export default (env) => {
         mode,
         platform,
         devServer,
-        output: {
-          bundleFilename,
-          sourceMapFilename,
-          assetsPath,
-        },
       }),
-      new Repack.plugins.ModuleFederationPlugin({
+      new Repack.plugins.ModuleFederationPluginV2({
         name: 'ServiceHubShell',
-        remotes: {
-          DoctorModule: 'DoctorModule@http://localhost:9001/[name][ext]',
-          BarberModule: 'BarberModule@http://localhost:9002/[name][ext]',
-          FoodModule: 'FoodModule@http://localhost:9003/[name][ext]',
+        shared: {
+          react: {
+            singleton: true,
+            eager: true,
+            requiredVersion: '19.2.3',
+          },
+          'react-native': {
+            singleton: true,
+            eager: true,
+            requiredVersion: '0.87.1',
+          },
+          '@react-navigation/native': {
+            singleton: true,
+            eager: true,
+          },
+          '@react-navigation/native-stack': {
+            singleton: true,
+            eager: true,
+          },
+          zustand: {
+            singleton: true,
+            eager: true,
+          },
+          '@servicehub/core': {
+            singleton: true,
+            eager: true,
+          },
         },
       }),
     ],

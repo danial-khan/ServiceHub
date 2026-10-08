@@ -4,10 +4,6 @@ import * as Repack from '@callstack/repack';
 
 const dirname = Repack.getDirname(import.meta.url);
 
-/**
- * Barber Module webpack configuration
- * This is a remote module loaded on demand by the shell
- */
 export default (env) => {
   const {
     mode = 'development',
@@ -22,8 +18,6 @@ export default (env) => {
     throw new Error('Missing platform');
   }
 
-  const reactNativePath = path.join(dirname, 'node_modules/react-native');
-
   return {
     mode,
     devtool: false,
@@ -32,16 +26,15 @@ export default (env) => {
     resolve: {
       ...Repack.getResolveOptions(platform),
       alias: {
-        '@': path.join(dirname, 'src'),
-        '@core': path.join(dirname, 'src/core'),
+        '@servicehub/core': path.join(dirname, 'packages/core/src'),
       },
     },
     output: {
       clean: true,
       hashFunction: 'xxhash64',
       path: path.join(dirname, 'build/modules/barber', platform),
-      filename: 'index.bundle',
-      chunkFilename: '[name].chunk.bundle',
+      filename: 'barber.js',
+      chunkFilename: 'barber.[name].[chunkhash:8].chunk.bundle',
       publicPath: 'http://localhost:9002/',
       uniqueName: 'BarberModule',
     },
@@ -53,6 +46,7 @@ export default (env) => {
           extractComments: false,
         }),
       ],
+      runtimeChunk: false,
     },
     module: {
       rules: [
@@ -76,32 +70,36 @@ export default (env) => {
       new Repack.plugins.ModuleFederationPlugin({
         name: 'BarberModule',
         library: { type: 'var', name: 'BarberModule' },
-        filename: 'index.bundle',
+        filename: 'remoteEntry.bundle',
         exposes: {
           './Module': './src/index.tsx',
         },
         shared: {
           react: {
             singleton: true,
-            eager: true,
+            eager: false,
             requiredVersion: '19.2.3',
           },
           'react-native': {
             singleton: true,
-            eager: true,
+            eager: false,
             requiredVersion: '0.87.1',
           },
           '@react-navigation/native': {
             singleton: true,
-            eager: true,
+            eager: false,
           },
           '@react-navigation/native-stack': {
             singleton: true,
-            eager: true,
+            eager: false,
           },
           zustand: {
             singleton: true,
-            eager: true,
+            eager: false,
+          },
+          '@servicehub/core': {
+            singleton: true,
+            eager: false,
           },
         },
       }),

@@ -5,7 +5,7 @@ import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuthStore, initializeAuth, SignInScreen, SignUpScreen } from './auth';
 import { useModuleLoader, initializeModuleLoader, ModuleSelectorScreen, ModuleMarketplaceScreen } from './modules';
-import { theme } from './core/theme';
+import { theme } from '@servicehub/core';
 
 const Stack = createNativeStackNavigator();
 

@@ -6,8 +6,8 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { Button, Input, Text } from '../../core';
-import { theme } from '../../core/theme';
+import { Button, Input, Text } from '@servicehub/core';
+import { theme } from '@servicehub/core';
 import { useAuthStore } from '../authStore';
 
 interface SignInScreenProps {

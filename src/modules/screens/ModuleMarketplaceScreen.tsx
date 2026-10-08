@@ -6,8 +6,8 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { Button, Card, Text } from '../../core';
-import { theme } from '../../core/theme';
+import { Button, Card, Text } from '@servicehub/core';
+import { theme } from '@servicehub/core';
 import { useModuleLoader } from '../moduleLoader';
 import { ModuleMetadata, DownloadStatus } from '../types';
 

@@ -7,8 +7,8 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { Button, Card, Text } from '../../../src/core';
-import { theme } from '../../../src/core/theme';
+import { Button, Card, Text } from '@servicehub/core';
+import { theme } from '@servicehub/core';
 import { RESTAURANTS, MENU_ITEMS, CATEGORIES, Restaurant, MenuItem } from './data';
 import { useFoodStore } from './store';
 

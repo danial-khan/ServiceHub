@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import { Button, Card, Text } from '../../../src/core';
-import { theme } from '../../../src/core/theme';
+import { Button, Card, Text } from '@servicehub/core';
+import { theme } from '@servicehub/core';
 import { DOCTORS, SPECIALTIES, Doctor } from '../data';
 
 interface DoctorListScreenProps {

@@ -5,8 +5,8 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { Button, Card, Text } from '../../../src/core';
-import { theme } from '../../../src/core/theme';
+import { Button, Card, Text } from '@servicehub/core';
+import { theme } from '@servicehub/core';
 import { Doctor, generateTimeSlots, TimeSlot } from '../data';
 import { useDoctorStore } from '../store';
 
