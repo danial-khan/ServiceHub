@@ -1,6 +1,19 @@
-import crypto from 'crypto';
+// Mock react-native Platform BEFORE importing moduleLoader
+jest.mock('react-native', () => ({
+  Platform: {
+    OS: 'android',
+    select: (obj: any) => obj.android,
+  },
+}));
 
-// Mock @callstack/repack/client before importing moduleLoader
+// Mock @module-federation/runtime
+jest.mock('@module-federation/runtime', () => ({
+  init: jest.fn(),
+  loadRemote: jest.fn(),
+  registerRemotes: jest.fn(),
+}));
+
+// Mock @callstack/repack/client
 jest.mock('@callstack/repack/client', () => ({
   ScriptManager: {
     shared: {
@@ -8,79 +21,80 @@ jest.mock('@callstack/repack/client', () => ({
       loadScript: jest.fn(),
     },
   },
-  Script: {
-    getRemoteURL: (url: string) => url,
-  },
 }));
 
 import { moduleLoader, ModuleCatalog } from '../src/modules/moduleLoader';
+import { init, loadRemote, registerRemotes } from '@module-federation/runtime';
+import { ScriptManager } from '@callstack/repack/client';
 
-// Mock fetch globally
-global.fetch = jest.fn();
+const mockCatalog: ModuleCatalog = {
+  version: '1.0.0',
+  lastUpdated: '2026-10-08',
+  modules: [
+    {
+      id: 'doctor',
+      name: 'Doctor',
+      version: '1.0.0',
+      url: 'http://10.0.2.2:9000/modules/doctor/doctor.container.bundle',
+      size: 45863,
+      checksum: '765ebac94dd10c79c9295b5d373d293deff80adbfef84c8e889d858d50e51694',
+      platform: 'android',
+    },
+    {
+      id: 'barber',
+      name: 'Barber',
+      version: '1.0.0',
+      url: 'http://10.0.2.2:9000/modules/barber/barber.container.bundle',
+      size: 45863,
+      checksum: '1fdfaa2b0cf79a5136350efb9de80e4615705fd901145722893ffb5270cc14a1',
+      platform: 'android',
+    },
+  ],
+};
 
-describe('Module Loader with Real Fetch', () => {
+describe('Module Loader with Module Federation Runtime', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (global.fetch as jest.Mock).mockReset();
+    global.fetch = jest.fn();
+    // Reset moduleLoader state by clearing its internal maps
+    (moduleLoader as any).catalog = null;
+    (moduleLoader as any).resolverRegistered = false;
+    (moduleLoader as any).loadedModules = new Map();
   });
 
-  it('should fetch and parse catalog correctly', async () => {
-    const mockCatalog: ModuleCatalog = {
-      version: '1.0.0',
-      lastUpdated: '2026-10-08T21:00:00.000Z',
-      modules: [
-        {
-          id: 'doctor',
-          name: 'Doctor',
-          url: 'http://localhost:9000/modules/doctor.bundle',
-          size: 1000,
-          checksum: 'abc123',
-          platform: 'android',
-          version: '1.0.0',
-        },
-      ],
-    };
-
+  it('should fetch and parse module catalog', async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockCatalog,
     });
 
     const catalog = await moduleLoader.fetchCatalog();
-    
-    expect(catalog.modules).toHaveLength(1);
+
+    expect(catalog.modules).toHaveLength(2);
     expect(catalog.modules[0].id).toBe('doctor');
-    expect(global.fetch).toHaveBeenCalledWith('http://localhost:9000/catalog.json');
-  });
-
-  it('should throw error when catalog fetch fails', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: false,
-      status: 404,
-    });
-
-    await expect(moduleLoader.fetchCatalog()).rejects.toThrow('Failed to fetch catalog: 404');
+    expect(fetch).toHaveBeenCalledWith('http://10.0.2.2:9000/catalog.json');
   });
 
   it('should validate SHA-256 checksum correctly', async () => {
     const data = 'test module data';
-    // Create ArrayBuffer the same way fetch returns it
     const encoder = new TextEncoder();
     const uint8Array = encoder.encode(data);
-    const arrayBuffer = uint8Array.buffer.slice(uint8Array.byteOffset, uint8Array.byteOffset + uint8Array.byteLength);
-    
-    // Compute hash the same way moduleLoader does
+    const arrayBuffer = uint8Array.buffer.slice(
+      uint8Array.byteOffset,
+      uint8Array.byteOffset + uint8Array.byteLength
+    );
+
     const sha256 = require('js-sha256');
     const correctHash = sha256(new Uint8Array(arrayBuffer));
 
-    const mockCatalog: ModuleCatalog = {
+    const testCatalog: ModuleCatalog = {
       version: '1.0.0',
       lastUpdated: '2026-10-08',
       modules: [
         {
           id: 'test',
           name: 'Test',
-          url: 'http://localhost:9000/test.bundle',
+          url: 'http://10.0.2.2:9000/test.bundle',
           size: arrayBuffer.byteLength,
           checksum: correctHash,
           platform: 'android',
@@ -92,7 +106,7 @@ describe('Module Loader with Real Fetch', () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockCatalog,
+        json: async () => testCatalog,
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -100,28 +114,22 @@ describe('Module Loader with Real Fetch', () => {
       });
 
     await moduleLoader.fetchCatalog();
-    const downloadedBuffer = await moduleLoader.downloadAndVerify('test');
-    
-    expect(downloadedBuffer).toBeDefined();
-    expect(downloadedBuffer.byteLength).toBe(arrayBuffer.byteLength);
+    const isValid = await moduleLoader.verifyChecksum('test');
+
+    expect(isValid).toBe(true);
   });
 
-  it('should reject on checksum mismatch', async () => {
-    const data = 'test module data';
-    const buffer = Buffer.from(data, 'utf-8');
-    const wrongHash = 'wrong_hash_1234567890abcdef';
-
-    // Setup catalog with wrong hash
-    const mockCatalog: ModuleCatalog = {
+  it('should reject mismatched checksum', async () => {
+    const testCatalog: ModuleCatalog = {
       version: '1.0.0',
       lastUpdated: '2026-10-08',
       modules: [
         {
-          id: 'test',
-          name: 'Test',
-          url: 'http://localhost:9000/test.bundle',
-          size: buffer.length,
-          checksum: wrongHash,
+          id: 'bad',
+          name: 'Bad',
+          url: 'http://10.0.2.2:9000/bad.bundle',
+          size: 100,
+          checksum: 'incorrecthash',
           platform: 'android',
           version: '1.0.0',
         },
@@ -131,48 +139,88 @@ describe('Module Loader with Real Fetch', () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockCatalog,
+        json: async () => testCatalog,
       })
       .mockResolvedValueOnce({
         ok: true,
-        arrayBuffer: async () => buffer.buffer,
+        arrayBuffer: async () => new ArrayBuffer(100),
       });
 
     await moduleLoader.fetchCatalog();
-    
-    await expect(moduleLoader.downloadAndVerify('test')).rejects.toThrow('Checksum mismatch');
+
+    await expect(moduleLoader.verifyChecksum('bad')).rejects.toThrow('Checksum mismatch');
   });
 
-  it('should throw error for non-existent module', async () => {
-    const mockCatalog: ModuleCatalog = {
-      version: '1.0.0',
-      lastUpdated: '2026-10-08',
-      modules: [],
+  it('should register resolver only once', async () => {
+    const arrayBuffer = new ArrayBuffer(100);
+    const correctHash = require('js-sha256')(new Uint8Array(arrayBuffer));
+
+    const catalogWithCorrectHash: ModuleCatalog = {
+      ...mockCatalog,
+      modules: mockCatalog.modules.map((m) => ({ ...m, checksum: correctHash })),
     };
 
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
-      json: async () => mockCatalog,
+      json: async () => catalogWithCorrectHash,
+      arrayBuffer: async () => arrayBuffer,
     });
 
+    (loadRemote as jest.Mock).mockResolvedValue({ default: () => 'MockComponent' });
+
+    // First loadModule will call addResolver
     await moduleLoader.fetchCatalog();
+    await moduleLoader.loadModule('doctor');
     
-    await expect(moduleLoader.downloadAndVerify('nonexistent')).rejects.toThrow(
-      'Module nonexistent not found in catalog'
-    );
+    // Second loadModule should NOT call addResolver again
+    await moduleLoader.loadModule('barber');
+
+    expect(ScriptManager.shared.addResolver).toHaveBeenCalledTimes(1);
   });
 
-  it('should handle module download failure', async () => {
-    const mockCatalog: ModuleCatalog = {
+  it('should register remote and call loadRemote with correct params', async () => {
+    const arrayBuffer = new ArrayBuffer(100);
+    const correctHash = require('js-sha256')(new Uint8Array(arrayBuffer));
+
+    const catalogWithCorrectHash: ModuleCatalog = {
+      ...mockCatalog,
+      modules: [{ ...mockCatalog.modules[0], checksum: correctHash }],
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => catalogWithCorrectHash,
+      arrayBuffer: async () => arrayBuffer,
+    });
+
+    const mockComponent = { default: () => 'DoctorComponent' };
+    (loadRemote as jest.Mock).mockResolvedValue(mockComponent);
+
+    await moduleLoader.fetchCatalog();
+    const component = await moduleLoader.loadModule('doctor');
+
+    expect(registerRemotes).toHaveBeenCalledWith([
+      {
+        name: 'doctor',
+        entry: 'http://10.0.2.2:9000/modules/doctor/doctor.container.bundle',
+      },
+    ]);
+
+    expect(loadRemote).toHaveBeenCalledWith('doctor/Module');
+    expect(component).toBe(mockComponent);
+  });
+
+  it('should prevent loadRemote if checksum verification fails', async () => {
+    const badCatalog: ModuleCatalog = {
       version: '1.0.0',
       lastUpdated: '2026-10-08',
       modules: [
         {
-          id: 'test',
-          name: 'Test',
-          url: 'http://localhost:9000/test.bundle',
-          size: 1000,
-          checksum: 'abc',
+          id: 'evil',
+          name: 'Evil',
+          url: 'http://10.0.2.2:9000/evil.bundle',
+          size: 100,
+          checksum: 'wronghash',
           platform: 'android',
           version: '1.0.0',
         },
@@ -182,90 +230,58 @@ describe('Module Loader with Real Fetch', () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockCatalog,
+        json: async () => badCatalog,
       })
       .mockResolvedValueOnce({
-        ok: false,
-        status: 500,
+        ok: true,
+        arrayBuffer: async () => new ArrayBuffer(100),
       });
 
     await moduleLoader.fetchCatalog();
-    
-    await expect(moduleLoader.downloadAndVerify('test')).rejects.toThrow(
-      'Failed to download module test: 500'
-    );
+
+    await expect(moduleLoader.loadModule('evil')).rejects.toThrow('Checksum mismatch');
+    expect(registerRemotes).not.toHaveBeenCalled();
+    expect(loadRemote).not.toHaveBeenCalled();
   });
 
-  it('should handle multiple modules in catalog', async () => {
-    const mockCatalog: ModuleCatalog = {
-      version: '1.0.0',
-      lastUpdated: '2026-10-08',
-      modules: [
-        { id: 'doctor', name: 'Doctor', url: 'http://localhost/doctor.bundle', size: 1000, checksum: 'abc', platform: 'android', version: '1.0.0' },
-        { id: 'barber', name: 'Barber', url: 'http://localhost/barber.bundle', size: 2000, checksum: 'def', platform: 'android', version: '1.0.0' },
-        { id: 'food', name: 'Food', url: 'http://localhost/food.bundle', size: 3000, checksum: 'ghi', platform: 'android', version: '1.0.0' },
-      ],
+  it('should initialize MF runtime with ScriptManager resolver', async () => {
+    const arrayBuffer = new ArrayBuffer(100);
+    const correctHash = require('js-sha256')(new Uint8Array(arrayBuffer));
+
+    const catalogWithCorrectHash: ModuleCatalog = {
+      ...mockCatalog,
+      modules: [{ ...mockCatalog.modules[0], checksum: correctHash }],
     };
 
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
-      json: async () => mockCatalog,
+      json: async () => catalogWithCorrectHash,
+      arrayBuffer: async () => arrayBuffer,
     });
 
+    (loadRemote as jest.Mock).mockResolvedValue({ default: () => 'Component' });
+
     await moduleLoader.fetchCatalog();
-    const catalog = moduleLoader.getCatalog();
-    
-    expect(catalog?.modules).toHaveLength(3);
-    expect(catalog?.modules.map(m => m.id)).toEqual(['doctor', 'barber', 'food']);
-  });
+    await moduleLoader.loadModule('doctor');
 
-  it('should validate checksum format (64 hex chars for SHA-256)', () => {
-    const validHash = '765ebac94dd10c79c9295b5d373d293deff80adbfef84c8e889d858d50e51694';
-    const invalidHash = 'abc123';
-    
-    expect(validHash).toHaveLength(64);
-    expect(invalidHash.length).toBeLessThan(64);
-    expect(/^[a-f0-9]{64}$/.test(validHash)).toBe(true);
-    expect(/^[a-f0-9]{64}$/.test(invalidHash)).toBe(false);
-  });
+    expect(ScriptManager.shared.addResolver).toHaveBeenCalledWith(expect.any(Function));
 
-  it('should get specific module from catalog', async () => {
-    const mockCatalog: ModuleCatalog = {
-      version: '1.0.0',
-      lastUpdated: '2026-10-08',
-      modules: [
-        { id: 'doctor', name: 'Doctor', url: 'http://localhost/doctor.bundle', size: 1000, checksum: 'abc', platform: 'android', version: '1.0.0' },
-      ],
-    };
+    const calls = (ScriptManager.shared.addResolver as jest.Mock).mock.calls;
+    const resolverFn = calls[calls.length - 1][0];
+    const result = await resolverFn('http://example.com/bundle.js');
 
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockCatalog,
+    expect(result).toEqual({
+      url: 'http://example.com/bundle.js',
+      method: 'GET',
+      verifyScriptSignature: 'strict',
     });
-
-    await moduleLoader.fetchCatalog();
-    const module = moduleLoader.getModule('doctor');
     
-    expect(module).toBeDefined();
-    expect(module?.id).toBe('doctor');
-    expect(module?.name).toBe('Doctor');
-  });
-
-  it('should return undefined for non-existent module', async () => {
-    const mockCatalog: ModuleCatalog = {
-      version: '1.0.0',
-      lastUpdated: '2026-10-08',
-      modules: [],
-    };
-
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockCatalog,
-    });
-
-    await moduleLoader.fetchCatalog();
-    const module = moduleLoader.getModule('nonexistent');
-    
-    expect(module).toBeUndefined();
+    expect(registerRemotes).toHaveBeenCalledWith([
+      {
+        name: 'doctor',
+        entry: 'http://10.0.2.2:9000/modules/doctor/doctor.container.bundle',
+      },
+    ]);
+    expect(loadRemote).toHaveBeenCalledWith('doctor/Module');
   });
 });

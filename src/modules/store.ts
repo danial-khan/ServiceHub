@@ -88,7 +88,7 @@ export const useModuleStore = create<ModuleState>()(
 
       uninstallModule: async (moduleId: string) => {
         try {
-          await moduleLoader.unloadModule(moduleId);
+          await moduleLoader.uninstallModule(moduleId);
           
           set(state => {
             const { [moduleId]: _, ...remainingInstalled } = state.installedModules;

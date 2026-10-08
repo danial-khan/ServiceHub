@@ -88,6 +88,10 @@ export default (env) => {
         platform,
         devServer,
       }),
+      new Repack.plugins.CodeSigningPlugin({
+        enabled: mode === 'production',
+        privateKeyPath: path.join(dirname, '.keys/private.pem'),
+      }),
       new Repack.plugins.ModuleFederationPlugin({
         name: 'DoctorModule',
         filename: 'doctor.container.bundle',

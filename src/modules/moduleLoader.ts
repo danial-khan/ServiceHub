@@ -1,5 +1,24 @@
-import { ScriptManager, Script } from '@callstack/repack/client';
+import { init, loadRemote, registerRemotes } from '@module-federation/runtime';
+import { ScriptManager, ScriptLocator } from '@callstack/repack/client';
+import { Platform } from 'react-native';
 import sha256 from 'js-sha256';
+
+const BASE_URL = Platform.select({
+  ios: 'http://localhost:9000',
+  android: 'http://10.0.2.2:9000',
+})!;
+
+export interface ModuleMetadata {
+  id: string;
+  name: string;
+  version: string;
+  url: string;
+  size: number;
+  checksum: string;
+  platform: string;
+  description?: string;
+  updatedAt?: string;
+}
 
 export interface ModuleCatalog {
   version: string;
@@ -7,26 +26,32 @@ export interface ModuleCatalog {
   modules: ModuleMetadata[];
 }
 
-export interface ModuleMetadata {
-  id: string;
-  name: string;
-  description?: string;
-  version: string;
-  url: string;
-  size: number;
-  checksum: string;
-  platform: string;
-  icon?: string;
-}
-
-const MODULE_HOST_URL = 'http://localhost:9000';
-
-export class ModuleLoader {
+class ModuleLoader {
   private catalog: ModuleCatalog | null = null;
+  private resolverRegistered = false;
   private loadedModules = new Map<string, any>();
 
+  async initialize() {
+    if (this.resolverRegistered) return;
+    
+    ScriptManager.shared.addResolver(async (scriptId: string): Promise<ScriptLocator> => {
+      return {
+        url: scriptId,
+        method: 'GET',
+        verifyScriptSignature: 'strict',
+      };
+    });
+    
+    this.resolverRegistered = true;
+
+    init({
+      name: 'ServiceHub',
+      remotes: [],
+    });
+  }
+
   async fetchCatalog(): Promise<ModuleCatalog> {
-    const response = await fetch(`${MODULE_HOST_URL}/catalog.json`);
+    const response = await fetch(`${BASE_URL}/catalog.json`);
     if (!response.ok) {
       throw new Error(`Failed to fetch catalog: ${response.status}`);
     }
@@ -38,89 +63,64 @@ export class ModuleLoader {
     return this.catalog;
   }
 
-  getModule(id: string): ModuleMetadata | undefined {
-    return this.catalog?.modules.find(m => m.id === id);
+  getModule(moduleId: string): ModuleMetadata | null {
+    if (!this.catalog) return null;
+    return this.catalog.modules.find((m) => m.id === moduleId) || null;
   }
 
-  async downloadAndVerify(moduleId: string): Promise<ArrayBuffer> {
+  async verifyChecksum(moduleId: string): Promise<boolean> {
     const module = this.getModule(moduleId);
     if (!module) {
       throw new Error(`Module ${moduleId} not found in catalog`);
     }
 
-    // Download the container bundle
     const response = await fetch(module.url);
     if (!response.ok) {
-      throw new Error(`Failed to download module ${moduleId}: ${response.status}`);
+      throw new Error(`Failed to download ${moduleId}: ${response.status}`);
     }
 
     const arrayBuffer = await response.arrayBuffer();
-    
-    // Verify SHA-256 checksum
     const uint8Array = new Uint8Array(arrayBuffer);
     const computedHash = sha256(uint8Array);
-    
+
     if (computedHash !== module.checksum) {
       throw new Error(
         `Checksum mismatch for ${moduleId}. Expected ${module.checksum}, got ${computedHash}`
       );
     }
 
-    return arrayBuffer;
+    return true;
   }
 
   async loadModule(moduleId: string): Promise<any> {
-    // Check if already loaded
     if (this.loadedModules.has(moduleId)) {
       return this.loadedModules.get(moduleId);
     }
 
+    await this.initialize();
+    
     const module = this.getModule(moduleId);
     if (!module) {
       throw new Error(`Module ${moduleId} not found in catalog`);
     }
 
-    // Download and verify
-    await this.downloadAndVerify(moduleId);
+    await this.verifyChecksum(moduleId);
 
-    // Configure ScriptManager resolver for this module
-    ScriptManager.shared.addResolver(async (scriptId, caller) => {
-      // Map the module ID to its container URL
-      const mod = this.getModule(scriptId);
-      if (mod) {
-        return {
-          url: Script.getRemoteURL(mod.url),
-          cache: true,
-          query: {
-            platform: mod.platform,
-          },
-        };
-      }
-      return undefined;
-    });
+    registerRemotes([
+      {
+        name: moduleId,
+        entry: module.url,
+      },
+    ]);
 
-    // Load the remote module using ScriptManager
-    try {
-      const container: any = await ScriptManager.shared.loadScript(moduleId);
-      
-      // Get the Module Federation container and initialize it
-      if (container && container.get) {
-        const factory = await container.get('./Module');
-        const Component = factory();
-        
-        this.loadedModules.set(moduleId, Component);
-        return Component;
-      }
-      
-      throw new Error(`Invalid module container for ${moduleId}`);
-    } catch (error) {
-      throw new Error(`Failed to load module ${moduleId}: ${error}`);
-    }
+    const component = await loadRemote(`${moduleId}/Module`);
+    
+    this.loadedModules.set(moduleId, component);
+    return component;
   }
 
-  async unloadModule(moduleId: string): Promise<void> {
+  async uninstallModule(moduleId: string): Promise<void> {
     this.loadedModules.delete(moduleId);
-    // ScriptManager will handle cache invalidation
   }
 
   isModuleLoaded(moduleId: string): boolean {
