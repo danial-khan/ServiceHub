@@ -1,6 +1,7 @@
 {
-  "name": "ServiceHub",
-  "version": "0.0.1",
+  "name": "servicehub",
+  "version": "1.0.0",
+  "description": "React Native on-demand module delivery demo using Re.Pack Module Federation",
   "private": true,
   "workspaces": [
     "packages/*"
