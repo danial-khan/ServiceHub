@@ -1,257 +1,131 @@
-import { create } from 'zustand';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ModuleLoaderStore, ModuleCatalog, ModuleMetadata, InstalledModule, DownloadStatus, ModuleManifest } from './types';
-import React from 'react';
+import { ScriptManager, Script } from '@callstack/repack/client';
+import sha256 from 'js-sha256';
 
-const CATALOG_URL = 'http://localhost:9000/catalog.json';
-const INSTALLED_MODULES_KEY = '@servicehub:installed_modules';
+export interface ModuleCatalog {
+  version: string;
+  lastUpdated: string;
+  modules: ModuleMetadata[];
+}
 
-const simulateChecksum = (data: string): string => {
-  let hash = 0;
-  for (let i = 0; i < data.length; i++) {
-    const char = data.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(16);
-};
+export interface ModuleMetadata {
+  id: string;
+  name: string;
+  description?: string;
+  version: string;
+  url: string;
+  size: number;
+  checksum: string;
+  platform: string;
+  icon?: string;
+}
 
-const loadInstalledModules = async (): Promise<Map<string, InstalledModule>> => {
-  try {
-    const stored = await AsyncStorage.getItem(INSTALLED_MODULES_KEY);
-    if (stored) {
-      const modules = JSON.parse(stored);
-      return new Map(Object.entries(modules));
+const MODULE_HOST_URL = 'http://localhost:9000';
+
+export class ModuleLoader {
+  private catalog: ModuleCatalog | null = null;
+  private loadedModules = new Map<string, any>();
+
+  async fetchCatalog(): Promise<ModuleCatalog> {
+    const response = await fetch(`${MODULE_HOST_URL}/catalog.json`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch catalog: ${response.status}`);
     }
-  } catch (error) {
-    console.error('Failed to load installed modules:', error);
+    this.catalog = await response.json();
+    return this.catalog;
   }
-  return new Map();
-};
 
-const saveInstalledModules = async (modules: Map<string, InstalledModule>) => {
-  try {
-    const obj = Object.fromEntries(modules.entries());
-    await AsyncStorage.setItem(INSTALLED_MODULES_KEY, JSON.stringify(obj));
-  } catch (error) {
-    console.error('Failed to save installed modules:', error);
+  getCatalog(): ModuleCatalog | null {
+    return this.catalog;
   }
-};
 
-export const useModuleLoader = create<ModuleLoaderStore>((set, get) => ({
-  catalog: null,
-  installedModules: new Map(),
-  downloadProgress: new Map(),
-  loadedModules: new Map(),
-  isLoadingCatalog: false,
-  catalogError: null,
+  getModule(id: string): ModuleMetadata | undefined {
+    return this.catalog?.modules.find(m => m.id === id);
+  }
 
-  fetchCatalog: async () => {
-    set({ isLoadingCatalog: true, catalogError: null });
-    try {
-      const response = await fetch(CATALOG_URL);
-      if (!response.ok) {
-        throw new Error('Failed to fetch module catalog');
-      }
-      const catalog: ModuleCatalog = await response.json();
-      set({ catalog, isLoadingCatalog: false });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      set({ catalogError: message, isLoadingCatalog: false });
-      console.warn('Using offline mode - catalog unavailable');
-    }
-  },
-
-  downloadModule: async (moduleId: string) => {
-    const { catalog, downloadProgress, installedModules } = get();
-    const module = catalog?.modules.find(m => m.id === moduleId);
-    
+  async downloadAndVerify(moduleId: string): Promise<ArrayBuffer> {
+    const module = this.getModule(moduleId);
     if (!module) {
-      throw new Error('Module not found in catalog');
+      throw new Error(`Module ${moduleId} not found in catalog`);
     }
 
-    const progress = new Map(downloadProgress);
-    progress.set(moduleId, {
-      moduleId,
-      status: DownloadStatus.DOWNLOADING,
-      progress: 0,
+    // Download the container bundle
+    const response = await fetch(module.url);
+    if (!response.ok) {
+      throw new Error(`Failed to download module ${moduleId}: ${response.status}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    
+    // Verify SHA-256 checksum
+    const uint8Array = new Uint8Array(arrayBuffer);
+    const computedHash = sha256(uint8Array);
+    
+    if (computedHash !== module.checksum) {
+      throw new Error(
+        `Checksum mismatch for ${moduleId}. Expected ${module.checksum}, got ${computedHash}`
+      );
+    }
+
+    return arrayBuffer;
+  }
+
+  async loadModule(moduleId: string): Promise<any> {
+    // Check if already loaded
+    if (this.loadedModules.has(moduleId)) {
+      return this.loadedModules.get(moduleId);
+    }
+
+    const module = this.getModule(moduleId);
+    if (!module) {
+      throw new Error(`Module ${moduleId} not found in catalog`);
+    }
+
+    // Download and verify
+    await this.downloadAndVerify(moduleId);
+
+    // Configure ScriptManager resolver for this module
+    ScriptManager.shared.addResolver(async (scriptId, caller) => {
+      // Map the module ID to its container URL
+      const mod = this.getModule(scriptId);
+      if (mod) {
+        return {
+          url: Script.getRemoteURL(mod.url),
+          cache: true,
+          query: {
+            platform: mod.platform,
+          },
+        };
+      }
+      return undefined;
     });
-    set({ downloadProgress: progress });
 
+    // Load the remote module using ScriptManager
     try {
-      const simulateDownload = (duration: number) => {
-        return new Promise<void>((resolve) => {
-          const steps = 20;
-          let currentStep = 0;
-          const interval = setInterval(() => {
-            currentStep++;
-            const progress = new Map(get().downloadProgress);
-            progress.set(moduleId, {
-              moduleId,
-              status: DownloadStatus.DOWNLOADING,
-              progress: currentStep / steps,
-            });
-            set({ downloadProgress: progress });
-
-            if (currentStep >= steps) {
-              clearInterval(interval);
-              resolve();
-            }
-          }, duration / steps);
-        });
-      };
-
-      await simulateDownload(1500);
-
-      progress.set(moduleId, {
-        moduleId,
-        status: DownloadStatus.VERIFYING,
-        progress: 1,
-      });
-      set({ downloadProgress: progress });
-
-      await new Promise<void>(resolve => setTimeout(resolve, 500));
-
-      const checksum = simulateChecksum(module.bundleUrl);
+      const container: any = await ScriptManager.shared.loadScript(moduleId);
       
-      progress.set(moduleId, {
-        moduleId,
-        status: DownloadStatus.INSTALLING,
-        progress: 1,
-      });
-      set({ downloadProgress: progress });
-
-      await new Promise<void>(resolve => setTimeout(resolve, 500));
-
-      const installed: InstalledModule = {
-        metadata: module,
-        installedAt: Date.now(),
-        localPath: `local://${moduleId}`,
-      };
-
-      const newInstalled = new Map(installedModules);
-      newInstalled.set(moduleId, installed);
-      set({ installedModules: newInstalled });
-      await saveInstalledModules(newInstalled);
-
-      progress.set(moduleId, {
-        moduleId,
-        status: DownloadStatus.COMPLETE,
-        progress: 1,
-      });
-      set({ downloadProgress: progress });
-
-      setTimeout(() => {
-        const p = new Map(get().downloadProgress);
-        p.delete(moduleId);
-        set({ downloadProgress: p });
-      }, 2000);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Download failed';
-      progress.set(moduleId, {
-        moduleId,
-        status: DownloadStatus.ERROR,
-        progress: 0,
-        error: message,
-      });
-      set({ downloadProgress: progress });
-      throw error;
-    }
-  },
-
-  removeModule: async (moduleId: string) => {
-    const { installedModules, loadedModules } = get();
-    const installed = installedModules.get(moduleId);
-    
-    if (installed) {
-      const newInstalled = new Map(installedModules);
-      newInstalled.delete(moduleId);
-      set({ installedModules: newInstalled });
-      await saveInstalledModules(newInstalled);
-
-      const newLoaded = new Map(loadedModules);
-      newLoaded.delete(moduleId);
-      set({ loadedModules: newLoaded });
-    }
-  },
-
-  loadModule: async (moduleId: string): Promise<ModuleManifest> => {
-    const { installedModules, loadedModules } = get();
-    
-    const existing = loadedModules.get(moduleId);
-    if (existing) {
-      return existing;
-    }
-
-    const installed = installedModules.get(moduleId);
-    if (!installed) {
-      throw new Error('Module not installed');
-    }
-
-    try {
-      let moduleExport;
-      
-      if (moduleId === 'DoctorModule') {
-        moduleExport = await import('../../modules/doctor/src');
-      } else if (moduleId === 'BarberModule') {
-        moduleExport = await import('../../modules/barber/src');
-      } else if (moduleId === 'FoodModule') {
-        moduleExport = await import('../../modules/food/src');
-      } else {
-        throw new Error(`Unknown module: ${moduleId}`);
+      // Get the Module Federation container and initialize it
+      if (container && container.get) {
+        const factory = await container.get('./Module');
+        const Component = factory();
+        
+        this.loadedModules.set(moduleId, Component);
+        return Component;
       }
       
-      const manifest: ModuleManifest = {
-        id: installed.metadata.id,
-        name: installed.metadata.name,
-        version: installed.metadata.version,
-        component: moduleExport.default || moduleExport,
-        getNavigator: moduleExport.getNavigator,
-      };
-
-      const newLoaded = new Map(loadedModules);
-      newLoaded.set(moduleId, manifest);
-      set({ loadedModules: newLoaded });
-
-      return manifest;
+      throw new Error(`Invalid module container for ${moduleId}`);
     } catch (error) {
-      console.error('Failed to load module:', error);
-      throw new Error(`Failed to load module: ${error}`);
+      throw new Error(`Failed to load module ${moduleId}: ${error}`);
     }
-  },
+  }
 
-  isModuleInstalled: (moduleId: string) => {
-    return get().installedModules.has(moduleId);
-  },
+  async unloadModule(moduleId: string): Promise<void> {
+    this.loadedModules.delete(moduleId);
+    // ScriptManager will handle cache invalidation
+  }
 
-  getInstalledModules: () => {
-    return Array.from(get().installedModules.values());
-  },
+  isModuleLoaded(moduleId: string): boolean {
+    return this.loadedModules.has(moduleId);
+  }
+}
 
-  checkForUpdates: async () => {
-    const { catalog, installedModules } = get();
-    const updates: ModuleMetadata[] = [];
-
-    if (!catalog) return updates;
-
-    for (const [moduleId, installed] of installedModules.entries()) {
-      const catalogModule = catalog.modules.find(m => m.id === moduleId);
-      if (catalogModule && catalogModule.version !== installed.metadata.version) {
-        updates.push(catalogModule);
-      }
-    }
-
-    return updates;
-  },
-
-  updateModule: async (moduleId: string) => {
-    await get().removeModule(moduleId);
-    await get().downloadModule(moduleId);
-  },
-}));
-
-export const initializeModuleLoader = async () => {
-  const installedModules = await loadInstalledModules();
-  useModuleLoader.setState({ installedModules });
-  await useModuleLoader.getState().fetchCatalog();
-};
+export const moduleLoader = new ModuleLoader();

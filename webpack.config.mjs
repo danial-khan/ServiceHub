@@ -23,7 +23,28 @@ export default (env) => {
       ...Repack.getResolveOptions(platform),
       alias: {
         '@servicehub/core': path.join(dirname, 'packages/core/src'),
+        '@react-native/asset-utils': path.join(dirname, 'node_modules/@react-native/asset-utils/src/index.js'),
       },
+      modules: [
+        'node_modules',
+        path.join(dirname, 'node_modules'),
+      ],
+      extensions: [
+        `.${platform}.tsx`,
+        `.${platform}.ts`,
+        `.${platform}.jsx`,
+        `.${platform}.js`,
+        '.native.tsx',
+        '.native.ts',
+        '.native.jsx',
+        '.native.js',
+        '.tsx',
+        '.ts',
+        '.jsx',
+        '.js',
+        '.json',
+      ],
+      fullySpecified: false,
     },
     output: {
       clean: true,
@@ -42,26 +63,23 @@ export default (env) => {
       rules: [
         {
           test: /\.[cm]?[jt]sx?$/,
-          exclude: /node_modules/,
+          exclude: [
+            /node_modules\/(?!(@react-native|react-native|@react-native-async-storage|@react-navigation))/,
+          ],
           use: {
             loader: 'babel-loader',
           },
         },
-        Repack.REACT_NATIVE_LOADING_RULES,
-        Repack.REACT_NATIVE_CODEGEN_RULES,
         {
-          test: Repack.getAssetExtensionsRegExp(
-            Repack.ASSET_EXTENSIONS.filter((ext) => ext !== 'svg')
-          ),
-          use: {
-            loader: '@callstack/repack/assets-loader',
-            options: {
-              platform,
-              devServerEnabled: Boolean(devServer),
-              scalableAssetExtensions: Repack.SCALABLE_ASSETS,
-            },
-          },
+          test: /\.js$/,
+          include: [
+            /node_modules\/@callstack\/repack\/mf/,
+            /node_modules\/@callstack\/repack\/dist\/modules/,
+            /node_modules\/@callstack\/repack\/client/,
+          ],
+          type: 'javascript/esm',
         },
+        Repack.REACT_NATIVE_LOADING_RULES,
       ],
     },
     plugins: [
@@ -71,8 +89,9 @@ export default (env) => {
         platform,
         devServer,
       }),
-      new Repack.plugins.ModuleFederationPluginV2({
+      new Repack.plugins.ModuleFederationPlugin({
         name: 'ServiceHubShell',
+        remotes: {}, // Remotes registered dynamically at runtime from catalog
         shared: {
           react: {
             singleton: true,

@@ -4,36 +4,33 @@
   "modules": [
     {
       "id": "doctor",
-      "name": "Doctor Booking",
-      "description": "Book appointments with doctors across specialties",
+      "name": "Doctor",
       "version": "1.0.0",
       "url": "http://localhost:9000/modules/doctor/doctor.container.bundle",
-      "size": 28912,
-      "checksum": "5d643e45f601b9c4fafcacdad8973f69f17e8188ff12cf082b2d5896235f23fe",
+      "size": 45863,
+      "checksum": "765ebac94dd10c79c9295b5d373d293deff80adbfef84c8e889d858d50e51694",
       "platform": "android",
-      "icon": "medical"
+      "updatedAt": "2026-10-08T21:40:29.813Z"
     },
     {
       "id": "barber",
-      "name": "Barber Services",
-      "description": "Book haircuts and grooming services",
+      "name": "Barber",
       "version": "1.0.0",
       "url": "http://localhost:9000/modules/barber/barber.container.bundle",
-      "size": 28912,
-      "checksum": "650f2abf84eff783058483f3c16a69a3f5a726a5812f4d3e21eb9db32843b394",
+      "size": 45863,
+      "checksum": "1fdfaa2b0cf79a5136350efb9de80e4615705fd901145722893ffb5270cc14a1",
       "platform": "android",
-      "icon": "scissors"
+      "updatedAt": "2026-10-08T21:40:29.846Z"
     },
     {
       "id": "food",
-      "name": "Food Delivery",
-      "description": "Order food from popular restaurant chains",
+      "name": "Food",
       "version": "1.0.0",
       "url": "http://localhost:9000/modules/food/food.container.bundle",
-      "size": 28892,
-      "checksum": "7d90930a39d3f20d9c2ce0d771036b056a1a464f346b80c5a8fd052dd373c4c7",
+      "size": 45843,
+      "checksum": "a9b2bd93f713fbe51cedd0edb6f75dece97c0e925a1b77b434591b5ea866a1c8",
       "platform": "android",
-      "icon": "restaurant"
+      "updatedAt": "2026-10-08T21:40:29.878Z"
     }
   ]
 }

@@ -3,100 +3,47 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useAuthStore, initializeAuth, SignInScreen, SignUpScreen } from './auth';
-import { useModuleLoader, initializeModuleLoader, ModuleSelectorScreen, ModuleMarketplaceScreen } from './modules';
-import { theme } from '@servicehub/core';
+import { useAuth } from './auth/AuthContext';
+import { LoginScreen } from './auth/LoginScreen';
+import { HomeScreen } from './screens/HomeScreen';
+import { useModuleStore } from './modules';
 
 const Stack = createNativeStackNavigator();
 
-type AppScreen = 'SignIn' | 'SignUp' | 'ModuleSelector' | 'Marketplace' | 'Module';
-
 export default function App() {
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [currentScreen, setCurrentScreen] = useState<AppScreen>('SignIn');
-  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
-  const { isAuthenticated } = useAuthStore();
-  const { loadedModules } = useModuleLoader();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const fetchCatalog = useModuleStore((state) => state.fetchCatalog);
+  const [catalogLoading, setCatalogLoading] = useState(true);
 
   useEffect(() => {
-    const initialize = async () => {
-      await initializeAuth();
-      await initializeModuleLoader();
-      setIsInitializing(false);
-    };
-    initialize();
-  }, []);
+    // Initialize module loader by fetching catalog
+    fetchCatalog()
+      .catch((error) => {
+        console.error('Failed to fetch module catalog:', error);
+      })
+      .finally(() => {
+        setCatalogLoading(false);
+      });
+  }, [fetchCatalog]);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      setCurrentScreen('ModuleSelector');
-    } else {
-      setCurrentScreen('SignIn');
-      setSelectedModuleId(null);
-    }
-  }, [isAuthenticated]);
-
-  if (isInitializing) {
+  if (authLoading || catalogLoading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <ActivityIndicator size="large" />
       </View>
     );
   }
 
-  const renderScreen = () => {
-    switch (currentScreen) {
-      case 'SignIn':
-        return (
-          <SignInScreen
-            onNavigateToSignUp={() => setCurrentScreen('SignUp')}
-          />
-        );
-      case 'SignUp':
-        return (
-          <SignUpScreen
-            onNavigateToSignIn={() => setCurrentScreen('SignIn')}
-          />
-        );
-      case 'ModuleSelector':
-        return (
-          <ModuleSelectorScreen
-            onModuleSelect={(moduleId) => {
-              setSelectedModuleId(moduleId);
-              setCurrentScreen('Module');
-            }}
-            onNavigateToMarketplace={() => setCurrentScreen('Marketplace')}
-          />
-        );
-      case 'Marketplace':
-        return (
-          <ModuleMarketplaceScreen
-            onBack={() => setCurrentScreen('ModuleSelector')}
-          />
-        );
-      case 'Module':
-        if (selectedModuleId) {
-          const module = loadedModules.get(selectedModuleId);
-          if (module?.getNavigator) {
-            const ModuleNavigator = module.getNavigator();
-            return (
-              <ModuleNavigator
-                onBack={() => setCurrentScreen('ModuleSelector')}
-              />
-            );
-          }
-        }
-        setCurrentScreen('ModuleSelector');
-        return null;
-      default:
-        return null;
-    }
-  };
-
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        {renderScreen()}
+        <Stack.Navigator>
+          {!isAuthenticated ? (
+            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+          ) : (
+            <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'ServiceHub' }} />
+          )}
+        </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
   );
@@ -107,6 +54,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
   },
 });

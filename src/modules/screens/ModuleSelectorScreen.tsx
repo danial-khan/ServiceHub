@@ -8,7 +8,8 @@ import {
 } from 'react-native';
 import { Button, Card, Text } from '@servicehub/core';
 import { theme } from '@servicehub/core';
-import { useModuleLoader } from '../moduleLoader';
+import { moduleLoader } from '../moduleLoader';
+import { useModuleStore } from '../store';
 import { useAuthStore } from '../../auth';
 
 interface ModuleSelectorScreenProps {

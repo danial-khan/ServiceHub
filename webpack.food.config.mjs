@@ -100,6 +100,11 @@ export default (env) => {
             eager: false,
             requiredVersion: '19.2.3',
           },
+          'react-native': {
+            singleton: true,
+            eager: false,
+            requiredVersion: '0.87.1',
+          },
           '@servicehub/core': {
             singleton: true,
             eager: false,

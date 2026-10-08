@@ -1,4 +1,3 @@
-export * from './types';
-export * from './moduleLoader';
-export * from './screens/ModuleSelectorScreen';
-export * from './screens/ModuleMarketplaceScreen';
+export { moduleLoader } from './moduleLoader';
+export type { ModuleCatalog, ModuleMetadata } from './moduleLoader';
+export { useModuleStore } from './store';

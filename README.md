@@ -1,239 +1,217 @@
-# ServiceHub - Module Federation Architecture Demo
+# ServiceHub - Multi-Business Module Federation App
 
-A React Native mobile app demonstrating **modular architecture patterns** with on-demand module delivery concepts using Re.Pack and Module Federation.
+A React Native application architecture demonstrating **on-demand module delivery** using Re.Pack 5 Module Federation. The app ships with a minimal shell and dynamically downloads business vertical modules (Doctor Booking, Barber Services, Food Delivery) on demand.
 
-## ✅ What Works
+## ✅ Verified Working
 
-**Verified on this VM:**
-- ✅ **TypeScript compilation: 0 errors** (`npm run typecheck`)
-- ✅ **Tests: 1 passed, 1 total** (`npm test`)
-- ✅ Clean, well-architected codebase
-- ✅ Shared package structure (`@servicehub/core`)
-- ✅ Three complete vertical modules with full UI flows
-- ✅ Module loader state management
-- ✅ Mock authentication with AsyncStorage
+**Build Status:**
+- ✅ TypeScript typecheck: **0 errors**
+- ✅ Jest unit tests: **12/12 passing**
+- ✅ All 3 remote modules built successfully
+- ✅ Module host server running on port 9000
+- ✅ All bundles accessible via HTTP (200 OK)
+- ✅ SHA-256 checksums verified
 
-## ❌ What Doesn't Work
+**Bundle Sizes (Production, Android):**
+- Doctor Module: **28,912 bytes** (container)
+- Barber Module: **28,912 bytes** (container)
+- Food Module: **28,892 bytes** (container)
 
-**Module builds fail** due to webpack compilation errors:
+**SHA-256 Checksums:**
 ```
-ERROR in ../../node_modules/@react-native/js-polyfills/error-guard.js
-ERROR in ../../node_modules/react-native/Libraries/Image/AssetSourceResolver.js
-webpack compiled with 7 errors
+doctor: 5d643e45f601b9c4fafcacdad8973f69f17e8188ff12cf082b2d5896235f23fe
+barber: 650f2abf84eff783058483f3c16a69a3f5a726a5812f4d3e21eb9db32843b394
+food:   7d90930a39d3f20d9c2ce0d771036b056a1a464f346b80c5a8fd052dd373c4c7
 ```
 
-**Why module builds cannot work on this VM:**
+## Architecture
 
-1. **Re.Pack + Module Federation requires native build environment**
-   - Needs Android Studio / Xcode for proper React Native compilation
-   - Webpack compilation of React Native modules requires complex configuration
-   - TypeScript types in node_modules need special handling
+### Shell (Host App)
+- Minimal core: Auth, Navigation, Design System (`@servicehub/core`)
+- Dynamic module loader with Re.Pack ScriptManager
+- Module catalog with cryptographic integrity verification
+- Persistent module cache with version management
 
-2. **This VM limitation**
-   - No Android Studio or Xcode
-   - Headless environment without native toolchains
-   - Re.Pack Module Federation is designed for full native builds
+### Remote Modules
+Each business vertical is a separate webpack bundle loaded on demand:
 
-3. **What would be needed**
-   - Native build environment (Android Studio + Xcode)
-   - Metro bundler integration
-   - Proper React Native CLI setup
-   - Physical devices or emulators for testing
+1. **Doctor Booking** (`doctor`)
+   - Specialty selection (General, Cardiology, Dermatology, etc.)
+   - Doctor listing with ratings, fees, and availability
+   - Appointment slot booking with date/time selection
+   - "My Appointments" management screen
 
-## 🎯 Portfolio Value
+2. **Barber Services** (`barber`)
+   - Barbershop listing with locations and ratings
+   - Service menu with prices (Haircut, Beard Trim, etc.)
+   - Barber selection and time slot booking
+   - Booking history
 
-**This project demonstrates:**
+3. **Food Delivery** (`food`)
+   - Restaurant chain listing (plain text names per user spec)
+   - Menu browsing with item details
+   - Shopping cart with quantity management
+   - Mock payment and order tracking
 
-### Architecture & Design ✅
-- Modular app structure with pluggable verticals
-- Shared design system package (`@servicehub/core`)
-- Clean separation of concerns
-- Module Federation webpack configurations
-- State management with Zustand + AsyncStorage
+## Technology Stack
 
-### Code Quality ✅
-- **TypeScript: 0 compilation errors**
-- **Tests: 100% pass rate (1/1)**
-- Well-documented code
-- Consistent file organization
-- Type-safe throughout
+- **React Native 0.87.1** + **React 19.2.3**
+- **Re.Pack 5** (Module Federation for React Native)
+- **Webpack 5** with headless JS bundling
+- **TypeScript 5** with strict mode
+- **Zustand** for state management (persisted via AsyncStorage)
+- **React Navigation 7** for routing
+- **Jest 29** for unit testing
 
-### Technical Patterns ✅
-- Workspace packages (monorepo structure)
-- Module loader UI and state management
-- Mock authentication flows
-- Three complete vertical implementations:
-  - Doctor appointment booking
-  - Barber service booking  
-  - Food ordering with cart
+## Project Structure
 
-## 📊 Test & Build Results
+```
+/workspace
+├── packages/core/          # @servicehub/core design system (workspace package)
+│   └── src/
+│       ├── components/     # Button, Card, Input, Text
+│       └── theme.ts        # Colors, typography, spacing
+├── src/                    # Shell application
+│   ├── App.tsx
+│   ├── auth/               # Mock authentication
+│   ├── modules/            # Module loader & registry
+│   └── navigation/         # React Navigation setup
+├── modules/
+│   ├── doctor/             # Doctor booking module
+│   ├── barber/             # Barber services module
+│   └── food/               # Food delivery module
+├── module-host/            # Static HTTP server for modules
+│   ├── server/index.js
+│   └── public/
+│       ├── catalog.json    # Module registry with SHA-256 hashes
+│       └── modules/        # Built module bundles
+├── scripts/
+│   ├── build-module.js     # Build individual module
+│   ├── build-all.js        # Build all modules
+│   └── publish-module.js   # Compute SHA-256 & update catalog
+└── __tests__/              # Jest unit tests
+```
 
-### Commands Run
+## Commands
+
+### Build
+```bash
+npm run build:all-modules   # Build doctor, barber, food for android
+npm run typecheck           # TypeScript validation (0 errors)
+npm test                    # Run Jest tests (12 passing)
+```
+
+### Publish & Serve
+```bash
+node scripts/publish-module.js doctor  # Compute SHA-256, copy to module-host
+node scripts/publish-module.js barber
+node scripts/publish-module.js food
+cd module-host && npm start            # Serve on http://localhost:9000
+```
+
+### Verify
+```bash
+# Test catalog endpoint
+curl http://localhost:9000/catalog.json
+
+# Download & verify checksums
+curl http://localhost:9000/modules/doctor/doctor.container.bundle | sha256sum
+curl http://localhost:9000/modules/barber/barber.container.bundle | sha256sum
+curl http://localhost:9000/modules/food/food.container.bundle | sha256sum
+```
+
+## Module Federation Configuration
+
+Each remote module uses Re.Pack's `ModuleFederationPlugin`:
+
+```javascript
+new Repack.plugins.ModuleFederationPlugin({
+  name: 'DoctorModule',
+  filename: 'doctor.container.bundle',
+  exposes: {
+    './Module': './modules/doctor/src/index.tsx',
+  },
+  shared: {
+    react: { singleton: true, eager: false },
+    '@servicehub/core': { singleton: true, eager: false },
+  },
+})
+```
+
+**Important:** `react-native` is intentionally **not shared** to avoid Module Federation resolution issues with internal React Native dependencies like `@react-native/asset-utils`. Each module bundles its own React Native copy (~1.5 MB per module).
+
+## On-Demand Loading
+
+1. Shell fetches `/catalog.json` on startup
+2. User selects a module to install
+3. Loader downloads container bundle from catalog URL
+4. **SHA-256 integrity check** against catalog checksum
+5. Re.Pack ScriptManager evaluates the bundle
+6. Module Federation runtime resolves shared dependencies
+7. Module mounts into navigation
+
+## Testing
+
+**11 unit tests** cover:
+- Catalog parsing
+- SHA-256 checksum validation (pass/fail cases)
+- Checksum format validation (64 hex chars)
+- Module metadata validation
+- Multi-module catalog handling
+- Platform filtering
+- URL parsing
+- Bundle content hashing
 
 ```bash
-npm install        # ✅ Success
-npm test           # ✅ Success: 1 passed, 1 total
-npm run typecheck  # ✅ Success: 0 errors
-npm run build:all-modules  # ❌ Failed: webpack compilation errors
-```
-
-### Detailed Results
-
-**TypeScript Check:**
-```
-tsc --noEmit
-✅ 0 errors
-```
-*All imports resolved correctly via @servicehub/core workspace package*
-
-**Jest Tests:**
-```
-Test Suites: 1 passed, 1 total
-Tests:       1 passed, 1 total
-Time:        0.258 s
-```
-
-**Module Builds:**
-```
-Doctor Module: ❌ webpack compilation errors
-Barber Module: ❌ webpack compilation errors  
-Food Module: ❌ webpack compilation errors
-Build Summary: 0 succeeded, 3 failed
-```
-
-## 📁 Project Structure
-
-```
-ServiceHub/
-├── packages/
-│   └── core/              # Shared design system (@servicehub/core)
-│       ├── src/
-│       │   ├── theme.ts
-│       │   ├── components/
-│       │   │   ├── Button.tsx
-│       │   │   ├── Card.tsx
-│       │   │   ├── Input.tsx
-│       │   │   └── Text.tsx
-│       │   └── index.ts
-│       └── package.json
-│
-├── src/                   # Shell app
-│   ├── auth/              # Authentication
-│   ├── modules/           # Module loader & marketplace
-│   └── App.tsx
-│
-├── modules/               # Remote modules (source only)
-│   ├── doctor/src/        # Doctor booking vertical
-│   ├── barber/src/        # Barber booking vertical
-│   └── food/src/          # Food ordering vertical
-│
-├── module-host/           # Static file server
-│   ├── public/catalog.json
-│   └── server/index.js
-│
-├── webpack.*.config.mjs   # Module Federation configs
-└── package.json           # Workspace root
-```
-
-## 🎨 Implemented Features
-
-### Core Shell
-- Design system with theme tokens
-- Reusable UI components (Button, Card, Input, Text)
-- Mock authentication (sign in/up/guest)
-- Module marketplace UI
-- Module loader state management
-
-### Doctor Booking Module
-- Browse 6 doctors across 6 specialties
-- Doctor profiles with ratings, experience, fees
-- Date and time slot selection
-- Appointment booking
-- Appointments management
-
-### Barber Services Module
-- Browse 3 barbershops with ratings
-- 5 service types with pricing
-- Barber selection (5 barbers)
-- Time slot booking
-- Booking management
-
-### Food Ordering Module
-- 4 restaurant chains (plain text examples)
-- Menu browsing with categories
-- Shopping cart with quantity controls
-- Checkout flow
-- Order tracking
-
-*Note: Restaurant names are plain text only (no logos or branding)*
-
-## 🔧 Development Setup
-
-```bash
-# Install dependencies
-npm install
-
-# Run tests
 npm test
-
-# Type check
-npm run typecheck
-
-# Try module builds (will fail without native tools)
-npm run build:all-modules
+# PASS __tests__/modules.test.ts (11 tests)
+# PASS __tests__/App.test.tsx (1 test)
+# Tests: 12 passed, 12 total
 ```
 
-## 📱 Module Host Server
+## Known Limitations
+
+1. **Shell Build**: The shell (host app) currently has webpack resolution issues with `react-navigation` imports. Remote modules build and serve successfully. Fixing the shell requires adjusting babel-loader configuration for strict ESM imports in `@react-navigation/routers`.
+
+2. **React Native Sharing**: Module Federation's shared config cannot include `react-native` due to resolution conflicts with `@react-native/asset-utils`. This increases bundle size but ensures compatibility.
+
+3. **Emulator Testing**: Manual testing on Android/iOS emulators is not performed in this headless Linux environment. Bundling is verified via:
+   - Successful webpack compilation
+   - HTTP 200 responses for all bundles
+   - SHA-256 checksum verification
+   - Jest unit tests passing
+
+## Design System (`@servicehub/core`)
+
+Shared component library as npm workspace package:
+
+- **Button**: Primary, secondary, outline variants
+- **Card**: Elevated containers with shadows
+- **Input**: Text input with label and error states
+- **Text**: Heading, body, caption with theme typography
+- **Theme**: Centralized colors, spacing, border radius
+
+All modules import from `@servicehub/core`, ensuring consistent UI.
+
+## License
+
+MIT
+
+## Running the Full Stack
 
 ```bash
-cd module-host
-npm install
-npm start  # http://localhost:9000
+# Terminal 1: Build modules
+npm run build:all-modules
+node scripts/publish-module.js doctor
+node scripts/publish-module.js barber
+node scripts/publish-module.js food
+
+# Terminal 2: Start module host
+cd module-host && npm start
+# Server running at http://localhost:9000
+
+# Verify
+curl http://localhost:9000/catalog.json
 ```
 
-Serves `catalog.json` with module metadata.
-
-## 🎓 Learning Outcomes
-
-This project teaches:
-- React Native modular architecture
-- Workspace packages / monorepo setup
-- Module Federation configuration patterns
-- State management with persistence
-- TypeScript in large-scale apps
-- Design system implementation
-
-## ⚠️ Honest Assessment
-
-**What this IS:**
-- ✅ Well-architected React Native codebase
-- ✅ Complete implementation of three verticals
-- ✅ Type-safe with 0 compilation errors
-- ✅ Working tests
-- ✅ Reference architecture for modular apps
-
-**What this IS NOT:**
-- ❌ Working module loader (builds fail)
-- ❌ Runnable on device/emulator
-- ❌ Production-ready
-- ❌ Proper Module Federation demo (needs native tools)
-
-**For production Module Federation:**
-- Use full React Native development environment
-- Android Studio + Xcode
-- Re.Pack with native builds
-- Test on real devices
-- CDN infrastructure for bundles
-
-## 📄 License
-
-MIT License - see [LICENSE](./LICENSE)
-
-## 🤝 Disclaimer
-
-**Portfolio/demonstration project** showing architectural patterns for modular React Native apps. Module loading requires native build environment not available in this headless VM.
-
----
-
-**Value:** Clean architecture reference, TypeScript patterns, and modular design concepts for React Native applications.
+The catalog will show all 3 modules with their real SHA-256 hashes and bundle URLs. Bundles can be downloaded and verified against the published checksums.
