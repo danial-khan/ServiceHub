@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": 1699564800000,
+  "modules": [
+    {
+      "id": "DoctorModule",
+      "name": "Doctor Booking",
+      "description": "Book appointments with doctors across specialties",
+      "version": "1.0.0",
+      "bundleUrl": "http://localhost:9001/index.bundle",
+      "size": 524288,
+      "checksum": "a1b2c3d4",
+      "minShellVersion": "1.0.0",
+      "icon": "medical"
+    },
+    {
+      "id": "BarberModule",
+      "name": "Barber Services",
+      "description": "Book haircuts and grooming services",
+      "version": "1.0.0",
+      "bundleUrl": "http://localhost:9002/index.bundle",
+      "size": 491520,
+      "checksum": "e5f6g7h8",
+      "minShellVersion": "1.0.0",
+      "icon": "scissors"
+    },
+    {
+      "id": "FoodModule",
+      "name": "Food Delivery",
+      "description": "Order food from popular restaurant chains",
+      "version": "1.0.0",
+      "bundleUrl": "http://localhost:9003/index.bundle",
+      "size": 557056,
+      "checksum": "i9j0k1l2",
+      "minShellVersion": "1.0.0",
+      "icon": "restaurant"
+    }
+  ]
+}
