@@ -1,4 +1,5 @@
 # ServiceHub
+<<<<<<< HEAD
 
 React Native portfolio demo showing **on-demand module delivery** with Re.Pack 5 Module Federation. The app downloads business vertical modules (Doctor, Barber, Food) dynamically at runtime.
 
@@ -199,3 +200,5 @@ Shell contains no remote module strings (verified).
 ## License
 
 MIT © 2026 Danial Khan
+=======
+>>>>>>> origin/main
