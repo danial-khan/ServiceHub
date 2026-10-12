@@ -23,13 +23,14 @@ export default (env) => {
       ...Repack.getResolveOptions(platform),
       alias: {
         '@servicehub/core': path.join(dirname, 'packages/core/src'),
-        '@module-federation/runtime/helpers': path.join(dirname, 'node_modules/@module-federation/runtime/dist/helpers.js'),
-        '@module-federation/error-codes/browser': path.join(dirname, 'node_modules/@module-federation/error-codes/dist/browser.cjs'),
-        '@react-native/asset-utils': path.join(dirname, 'node_modules/@react-native/asset-utils/src/index.js'),
+        '@module-federation/runtime/helpers': path.join(dirname, '..', 'node_modules/@module-federation/runtime/dist/helpers.js'),
+        '@module-federation/error-codes/browser': path.join(dirname, '..', 'node_modules/@module-federation/error-codes/dist/browser.cjs'),
+        '@react-native/asset-utils': path.join(dirname, '..', 'node_modules/@react-native/asset-utils/src/index.js'),
       },
       modules: [
         'node_modules',
         path.join(dirname, 'node_modules'),
+        path.join(dirname, '..', 'node_modules'),
       ],
       extensions: [
         `.${platform}.tsx`,
