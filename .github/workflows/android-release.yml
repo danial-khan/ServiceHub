@@ -137,3 +137,126 @@ jobs:
           name: ServiceHub-${{ steps.version.outputs.VERSION }}.apk
           path: release/ServiceHub-${{ steps.version.outputs.VERSION }}.apk
           retention-days: 90
+
+  test-emulator:
+    runs-on: ubuntu-latest
+    needs: build-release
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Determine version
+        id: version
+        run: |
+          echo "VERSION=pr-${{ github.event.pull_request.number }}-${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ServiceHub-${{ steps.version.outputs.VERSION }}.apk
+          path: apk
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-34-x86_64
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Run tests in emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            # Wait for emulator to be ready
+            adb wait-for-device
+            adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
+            echo "Emulator ready"
+            
+            # Install APK
+            adb install -r apk/ServiceHub-${{ steps.version.outputs.VERSION }}.apk
+            echo "APK installed"
+            
+            # Clear logcat
+            adb logcat -c
+            
+            # Launch the app
+            adb shell am start -n com.servicehub/.MainActivity
+            echo "App launched"
+            
+            # Wait 30 seconds
+            sleep 30
+            
+            # Dump logcat
+            adb logcat -d '*:E' > logcat-errors.txt
+            adb logcat -d | grep -E '(AndroidRuntime|ReactNativeJS|FATAL)' > logcat-react.txt || true
+            
+            # Take screenshot
+            adb exec-out screencap -p > screenshot.png
+            
+            # Check if app process is still running
+            if adb shell "ps -A | grep com.servicehub"; then
+              echo "✓ App process is still running"
+            else
+              echo "✗ App process has crashed or is not running"
+              echo "Full logcat:"
+              cat logcat-react.txt
+              exit 1
+            fi
+            
+            echo "=== Error logcat ==="
+            cat logcat-errors.txt
+            echo "=== React/Fatal logcat ==="
+            cat logcat-react.txt
+
+      - name: Upload logcat
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-logcat
+          path: |
+            logcat-errors.txt
+            logcat-react.txt
+          retention-days: 30
+
+      - name: Upload screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-screenshot
+          path: screenshot.png
+          retention-days: 30
+
