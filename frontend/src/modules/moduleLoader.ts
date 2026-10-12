@@ -3,10 +3,22 @@ import { ScriptManager, ScriptLocator } from '@callstack/repack/client';
 import { Platform } from 'react-native';
 import sha256 from 'js-sha256';
 
-const BASE_URL = Platform.select({
-  ios: 'http://localhost:9000',
-  android: 'http://10.0.2.2:9000',
-})!;
+// Module host URL configuration
+// For production, set PRODUCTION_MODULE_HOST_URL to your Vercel backend URL
+// For development, it defaults to localhost (iOS) or 10.0.2.2 (Android emulator)
+const PRODUCTION_MODULE_HOST_URL = 'https://YOUR-VERCEL-URL.vercel.app'; // Replace with your Vercel URL
+
+const getModuleHostUrl = (): string => {
+  if (__DEV__) {
+    // Development: use localhost/emulator
+    return Platform.OS === 'ios' ? 'http://localhost:9000' : 'http://10.0.2.2:9000';
+  } else {
+    // Production: use Vercel URL
+    return PRODUCTION_MODULE_HOST_URL;
+  }
+};
+
+const BASE_URL = getModuleHostUrl();
 
 export interface ModuleMetadata {
   id: string;
@@ -100,7 +112,10 @@ class ModuleLoader {
       throw new Error(`Module ${moduleId} not found in catalog`);
     }
 
-    const response = await fetch(module.url);
+    // If URL is relative, prepend BASE_URL
+    const fullUrl = module.url.startsWith('http') ? module.url : `${BASE_URL}${module.url}`;
+
+    const response = await fetch(fullUrl);
     if (!response.ok) {
       throw new Error(`Failed to download ${moduleId}: ${response.status}`);
     }
@@ -132,14 +147,17 @@ class ModuleLoader {
 
     await this.verifyChecksum(moduleId);
 
+    // If URL is relative, prepend BASE_URL
+    const entryUrl = module.url.startsWith('http') ? module.url : `${BASE_URL}${module.url}`;
+
     // Store the base URL for this remote (for chunk resolution)
-    const baseUrl = module.url.substring(0, module.url.lastIndexOf('/'));
+    const baseUrl = entryUrl.substring(0, entryUrl.lastIndexOf('/'));
     this.remoteBaseUrls.set(moduleId, baseUrl);
 
     registerRemotes([
       {
         name: moduleId,
-        entry: module.url,
+        entry: entryUrl,
       },
     ]);
 

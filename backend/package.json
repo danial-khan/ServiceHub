@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "tsc && node dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "express": "^4.18.2",

@@ -186,6 +186,86 @@ Shell contains no remote module strings (verified).
 - **Not tested on iOS** (macOS with Xcode required)
 - **Not submitted to App Store** (App Store review not performed)
 
+## Deploying Backend to Vercel
+
+The backend is configured for zero-config deployment to Vercel as a serverless function.
+
+### Prerequisites
+
+1. Install Vercel CLI: `npm install -g vercel`
+2. Build and publish modules to `backend/public/modules` (they will be committed and deployed)
+
+### Deployment Steps
+
+```bash
+# 1. Build modules (frontend)
+npm run build:modules
+
+# 2. Publish modules to backend/public (this commits them)
+npm run publish:modules
+
+# 3. Commit the published modules
+git add backend/public/modules backend/public/catalog.json
+git commit -m "Publish modules for Vercel deployment"
+git push
+
+# 4. Deploy to Vercel (from backend directory)
+cd backend
+vercel deploy --prod
+```
+
+### Configuration
+
+**Root Directory**: Set to `backend` in Vercel project settings
+
+**Environment Variables** (optional):
+- `PUBLIC_BASE_URL`: Your Vercel URL (e.g., `https://servicehub-backend.vercel.app`)
+
+### Update Frontend
+
+After deploying, update the production URL in the frontend:
+
+```typescript
+// frontend/src/modules/moduleLoader.ts
+const PRODUCTION_MODULE_HOST_URL = 'https://your-app.vercel.app';
+```
+
+### Local Verification
+
+Test the serverless function locally:
+
+```bash
+cd backend
+
+# Build the backend
+npm run build
+
+# Test with Vercel CLI (emulates serverless environment)
+vercel dev
+
+# Or test endpoints directly
+curl http://localhost:3000/health
+curl http://localhost:3000/catalog.json
+curl http://localhost:3000/modules/doctor/doctor.container.bundle | sha256sum
+```
+
+### How It Works
+
+1. **Serverless Function**: `api/index.ts` exports the Express app without calling `listen()`
+2. **Static Assets**: Modules and catalog are served from `backend/public` (committed to git)
+3. **Routing**: `vercel.json` rewrites `/health`, `/catalog.json`, and `/modules/*` to the serverless function
+4. **Module URLs**: Catalog uses relative URLs (`/modules/doctor/...`) that work on any domain
+5. **No Build Step**: Vercel serves pre-built modules from git; no React Native build needed
+
+### Architecture
+
+```
+Vercel Function (api/index.ts)
+├── GET /health → { status: 'ok' }
+├── GET /catalog.json → backend/public/catalog.json
+└── GET /modules/:module/* → backend/public/modules/:module/*
+```
+
 ## Tech Stack
 
 - React Native 0.87.1
@@ -195,6 +275,8 @@ Shell contains no remote module strings (verified).
 - TypeScript 5
 - Zustand (state management, persisted via AsyncStorage)
 - Jest 29 (unit tests)
+- Express 4 (backend)
+- Vercel (serverless deployment)
 
 ## License
 
