@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">ServiceHub</string>
     <string name="RepackPublicKey">MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvAIp3P7wUJffegSo4Kqr/gp6RmFZ62XTQUpYX9pztQz7VCym5YWnVvpGh4nYvfaKAxsHWTJECUWgFRbWRseISMGB1dqbdfOIE7gHYHDdNJ8l5MKK1J1ozO16A8lNIVSu6GRUFakpRVKjvvndaldjU3SkZnYmPhknoF4z+3Zc2HS3wX8QF+se+O6V4WUPxyAXJn3iELYPkKNNQ2+Kd/MlffoMlwwM1ONDzy0k4A8ll5CwBz+1BuQUu+iRZYSQzWrzV1cosiQ+UMLBNwqxn3/B7J7A7fIu2re+QI1aiyDWVNxwHn1WGEFTXasZ88kAWTbkrft0gKQY/Ud63RdJpd20rQIDAQAB</string>
 </resources>
