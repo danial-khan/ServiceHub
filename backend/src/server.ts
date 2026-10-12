@@ -19,6 +19,11 @@ const MODULES_DIR = IS_VERCEL
 app.use(cors());
 app.use(express.json());
 
+// Root route
+app.get('/', (req: Request, res: Response) => {
+  res.send('<html><body><h1>Backend is up and running.</h1></body></html>');
+});
+
 // Serve static files from public directory (catalog.json and committed modules)
 app.use(express.static(path.join(__dirname, '../public')));
 
