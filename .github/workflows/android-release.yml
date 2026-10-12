@@ -46,6 +46,8 @@ jobs:
         run: |
           cd frontend
           ln -s ../node_modules node_modules
+          ls -la
+          ls -la node_modules/@react-native/gradle-plugin 2>&1 || echo "Symlink target not found"
 
       - name: Build shell bundle
         run: |
