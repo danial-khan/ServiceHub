@@ -57,6 +57,7 @@ jobs:
           mkdir -p android/app/src/main/assets
           cp build/shell/android/shell.bundle android/app/src/main/assets/index.android.bundle
           # Disable React Native bundling in Gradle
+          echo "" >> android/gradle.properties
           echo "react.bundleInRelease=false" >> android/gradle.properties
 
       - name: Configure release keystore
