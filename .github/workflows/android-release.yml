@@ -203,48 +203,21 @@ jobs:
           disable-animations: true
           script: |
             set -e
-            # Wait for emulator to be ready
             adb wait-for-device
             adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
             echo "Emulator ready"
-            
-            # Install APK
             adb install -r apk/ServiceHub-${{ steps.version.outputs.VERSION }}.apk
             echo "APK installed"
-            
-            # Clear logcat
             adb logcat -c
-            
-            # Launch the app
             adb shell am start -n com.servicehub/.MainActivity
             echo "App launched"
-            
-            # Wait 30 seconds
             sleep 30
-            
-            # Dump logcat
             adb logcat -d '*:E' > logcat-errors.txt
             adb logcat -d | grep -E '(AndroidRuntime|ReactNativeJS|FATAL)' > logcat-react.txt || true
-            
-            # Take screenshot
             adb exec-out screencap -p > screenshot.png
-            
-            # Check if app process is still running
-            adb shell "ps -A | grep com.servicehub" > ps-output.txt || true
-            if grep -q "com.servicehub" ps-output.txt; then
-              echo "✓ App process is still running"
-              cat ps-output.txt
-            else
-              echo "✗ App process has crashed or is not running"
-              echo "Full logcat:"
-              cat logcat-react.txt
-              exit 1
-            fi
-            
-            echo "=== Error logcat ==="
-            cat logcat-errors.txt
-            echo "=== React/Fatal logcat ==="
-            cat logcat-react.txt
+            adb shell "ps -A | grep com.servicehub" > ps-output.txt && echo "✓ App process is still running" && cat ps-output.txt || (echo "✗ App process has crashed or is not running" && echo "Full logcat:" && cat logcat-react.txt && exit 1)
+            echo "=== Error logcat ===" && cat logcat-errors.txt
+            echo "=== React/Fatal logcat ===" && cat logcat-react.txt
 
       - name: Upload logcat
         if: always()
