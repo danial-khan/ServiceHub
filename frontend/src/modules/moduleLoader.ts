@@ -6,7 +6,7 @@ import sha256 from 'js-sha256';
 // Module host URL configuration
 // For production, set PRODUCTION_MODULE_HOST_URL to your Vercel backend URL
 // For development, it defaults to localhost (iOS) or 10.0.2.2 (Android emulator)
-const PRODUCTION_MODULE_HOST_URL = 'https://YOUR-VERCEL-URL.vercel.app'; // Replace with your Vercel URL
+const PRODUCTION_MODULE_HOST_URL = 'https://servicehub-backend-rose.vercel.app';
 
 const getModuleHostUrl = (): string => {
   if (__DEV__) {

@@ -190,6 +190,8 @@ Shell contains no remote module strings (verified).
 
 The backend is configured for zero-config deployment to Vercel as a serverless function.
 
+**Live Backend:** https://servicehub-backend-rose.vercel.app
+
 ### Prerequisites
 
 1. Install Vercel CLI: `npm install -g vercel`
