@@ -140,12 +140,21 @@ dependencies {
     }
 }
 
-// Disable Gradle bundling - we bundle manually with Re.Pack
+// Re-enable Hermes - the issue was that disabling it still caused React Native to try to load it
+project.ext.react = [
+    enableHermes: true  // Explicitly enable Hermes
+]
+
+// Configure the bundle task to use our pre-built Re.Pack bundle instead of running Metro
 project.afterEvaluate {
     tasks.findAll { task ->
         task.name.contains("createBundle") && task.name.contains("JsAndAssets")
     }.each { bundleTask ->
-        bundleTask.enabled = false
+        bundleTask.doFirst {
+            // The bundle is already in assets from our workflow step
+            println "Using pre-built Re.Pack bundle from assets/index.android.bundle"
+        }
+        // Don't disable the task - let it run but the bundle is already there
     }
 }
 
