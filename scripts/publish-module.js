@@ -4,13 +4,13 @@ const crypto = require('crypto');
 
 const moduleName = process.argv[2];
 if (!moduleName) {
-  console.error('Usage: node publish-module.js <module-name>');
+  console.error('Usage: node scripts/publish-module.js <module-name>');
   process.exit(1);
 }
 
-const sourcePath = path.join(__dirname, '..', 'build', 'modules', moduleName, 'android');
-const destPath = path.join(__dirname, '..', 'module-host', 'public', 'modules', moduleName);
-const catalogPath = path.join(__dirname, '..', 'module-host', 'public', 'catalog.json');
+const sourcePath = path.join(__dirname, '..', 'frontend', 'build', 'modules', moduleName, 'android');
+const destPath = path.join(__dirname, '..', 'backend', 'public', 'modules', moduleName);
+const catalogPath = path.join(__dirname, '..', 'backend', 'public', 'catalog.json');
 
 // Ensure destination directory exists
 fs.mkdirSync(destPath, { recursive: true });

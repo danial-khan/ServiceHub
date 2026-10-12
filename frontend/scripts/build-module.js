@@ -16,10 +16,11 @@ if (!MODULE_NAME || !VALID_MODULES.includes(MODULE_NAME)) {
 console.log(`\n📦 Building ${MODULE_NAME} module...\n`);
 
 try {
+  const frontendRoot = path.join(__dirname, '..');
   const command = `PLATFORM=android webpack-cli --config webpack.${MODULE_NAME}.config.mjs --mode production`;
-  execSync(command, { stdio: 'inherit', cwd: path.join(__dirname, '..') });
+  execSync(command, { stdio: 'inherit', cwd: frontendRoot });
 
-  const buildPath = path.join(__dirname, `../build/modules/${MODULE_NAME}/android`);
+  const buildPath = path.join(frontendRoot, `build/modules/${MODULE_NAME}/android`);
   const bundlePath = path.join(buildPath, 'index.bundle');
 
   if (fs.existsSync(bundlePath)) {

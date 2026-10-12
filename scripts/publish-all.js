@@ -10,7 +10,7 @@ for (const module of modules) {
   try {
     execSync(`node ${path.join(__dirname, 'publish-module.js')} ${module}`, {
       stdio: 'inherit',
-      cwd: __dirname.replace('/scripts', ''),
+      cwd: path.join(__dirname, '..'),
     });
   } catch (error) {
     console.error(`Failed to publish ${module}:`, error.message);

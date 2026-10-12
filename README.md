@@ -4,6 +4,23 @@ React Native portfolio demo showing **on-demand module delivery** with Re.Pack 5
 
 > **Note:** Auth and sample data are mocked. This is a portfolio/architecture demonstration, not a production app.
 
+## Monorepo Structure
+
+```
+servicehub/
+├── frontend/           # React Native app
+│   ├── src/           # Shell app source
+│   ├── modules/       # Remote module sources (doctor, barber, food)
+│   ├── packages/core/ # @servicehub/core design system
+│   ├── android/       # Android native project
+│   ├── ios/           # iOS native project
+│   └── scripts/       # Build scripts for modules
+├── backend/           # Module host server
+│   ├── src/          # TypeScript Express server
+│   └── public/       # Static assets & catalog.json
+└── scripts/          # Root-level publish scripts
+```
+
 ## Architecture
 
 ```mermaid
@@ -24,11 +41,11 @@ graph TD
 
 ### Components
 
-- **Shell** (`src/`): Minimal core with auth, navigation, and module loader
-- **@servicehub/core** (`packages/core/`): Shared design system (Button, Card, Text, theme)
-- **Remote Modules** (`modules/doctor`, `modules/barber`, `modules/food`): Independently built webpack bundles served via HTTP
-- **Catalog** (`module-host/public/catalog.json`): Module registry with URLs, sizes, and SHA-256 checksums
-- **Module Host** (`module-host/`): Express server on port 9000 serving catalog + bundles
+- **Shell** (`frontend/src/`): Minimal core with auth, navigation, and module loader
+- **@servicehub/core** (`frontend/packages/core/`): Shared design system (Button, Card, Text, theme)
+- **Remote Modules** (`frontend/modules/`): Independently built webpack bundles served via HTTP
+- **Catalog** (`backend/public/catalog.json`): Module registry with URLs, sizes, and SHA-256 checksums
+- **Module Host** (`backend/`): Express server on port 9000 serving catalog + bundles
 
 ## On-Demand Loading Flow
 
@@ -44,7 +61,8 @@ graph TD
 Re.Pack's `CodeSigningPlugin` signs all production bundles with RSA-2048:
 
 ```bash
-# Generate keys
+# Generate keys (run from frontend/)
+cd frontend
 node scripts/generate-signing-keys.js
 
 # Creates:
@@ -60,56 +78,74 @@ The **public key is committed** to the repo in native configs. Only the private 
 - **Production:** `verifyScriptSignature: 'strict'` (requires valid `.sign` files)
 - **Development:** `verifyScriptSignature: 'off'` (dev builds work without signing)
 
+## Quick Start
+
+```bash
+# Install dependencies (from root)
+npm install
+
+# Generate code signing keys (first time only)
+cd frontend && node scripts/generate-signing-keys.js && cd ..
+
+# Build all remote modules
+npm run build:modules
+
+# Publish modules to backend (updates catalog.json with SHA-256 hashes)
+npm run publish:modules
+
+# In separate terminal: start backend server
+npm run backend
+# Serves http://localhost:9000
+
+# Run on device/emulator
+npm run android   # or npm run ios
+```
+
+## Monorepo Scripts (Root)
+
+| Command | Description |
+|---------|-------------|
+| `npm install` | Install all workspace dependencies |
+| `npm run app` | Start React Native dev server |
+| `npm run android` | Run Android app |
+| `npm run ios` | Run iOS app |
+| `npm run build:modules` | Build all remote modules (production) |
+| `npm run publish:modules` | Publish modules to backend & update catalog |
+| `npm run backend` | Start backend dev server |
+| `npm test` | Run frontend tests |
+| `npm run typecheck` | TypeCheck frontend & backend |
+
+## Backend
+
+The backend is a static Express server with **no database or authentication**. See [`backend/README.md`](./backend/README.md) for details.
+
+Environment variables (`.env`):
+- `PORT` (default: 9000)
+- `MODULES_DIR` (default: `../frontend/build/modules`)
+
 ## Adding a New Module
 
-1. Create `modules/newmodule/src/index.tsx`:
+1. Create `frontend/modules/newmodule/src/index.tsx`:
    ```tsx
    export default function NewModule({ onBack }: { onBack: () => void }) {
      return <View><Text>New Module</Text></View>;
    }
    ```
 
-2. Create `webpack.newmodule.config.mjs` (copy `webpack.doctor.config.mjs`, change `name: 'NewModule'`, entry path, and output path)
+2. Create `frontend/webpack.newmodule.config.mjs` (copy `webpack.doctor.config.mjs`, change `name: 'NewModule'`, entry path, and output path)
 
-3. Add to `scripts/build-all.js`:
+3. Add to `frontend/scripts/build-all.js`:
    ```js
    const MODULES = ['doctor', 'barber', 'food', 'newmodule'];
    ```
 
 4. Build & publish:
    ```bash
-   npm run build:all-modules
-   npm run publish:all
+   npm run build:modules
+   npm run publish:modules
    ```
 
 The new module appears in the catalog and can be installed dynamically.
-
-## Build & Run
-
-```bash
-# Install dependencies
-npm install
-
-# Generate code signing keys
-node scripts/generate-signing-keys.js
-
-# Build all remote modules (production mode)
-npm run build:all-modules
-# Output: doctor (2.4 MB), barber (2.4 MB), food (2.5 MB)
-
-# Publish modules to host (updates catalog.json with SHA-256 hashes)
-npm run publish:all
-
-# In separate terminal: start module host
-cd module-host && npm start
-# Serves http://localhost:9000
-
-# Build shell for Android
-npm run build:shell
-
-# Run on device/emulator
-npx react-native run-android   # or run-ios
-```
 
 ## Apple App Store Policy
 
@@ -121,80 +157,16 @@ React Native uses JavaScriptCore on iOS, so **dynamically downloaded JS bundles 
 
 **Recommendation:** For production App Store submission, consult Apple's guidelines and consider an attorney review of your specific use case.
 
-## Verified (Real Outputs)
-
-### Tests
-```bash
-$ npm test
-Test Suites: 2 passed, 2 total
-Tests:       8 passed, 8 total
-```
-
-### TypeScript
-```bash
-$ npm run typecheck
-> tsc --noEmit
-# Exit code: 0 (no errors)
-```
-
-### Build
-```bash
-$ npm run build:all-modules
-Build Summary: 3 succeeded, 0 failed
-```
-
-### Publish & SHA-256
-```bash
-$ npm run publish:all
-✅ doctor module published successfully
-   SHA-256: 765ebac94dd10c79c9295b5d373d293deff80adbfef84c8e889d858d50e51694
-   Size: 45863 bytes
-✅ barber module published successfully  
-   SHA-256: 1fdfaa2b0cf79a5136350efb9de80e4615705fd901145722893ffb5270cc14a1
-   Size: 45863 bytes
-✅ food module published successfully
-   SHA-256: a9b2bd93f713fbe51cedd0edb6f75dece97c0e925a1b77b434591b5ea866a1c8
-   Size: 45843 bytes
-```
-
-### SHA-256 Verification (curl + sha256sum)
-```bash
-$ curl http://localhost:9000/modules/doctor/doctor.container.bundle | sha256sum
-765ebac94dd10c79c9295b5d373d293deff80adbfef84c8e889d858d50e51694
-Match: true
-```
-
-### Shell Bundle Grep Check
-```bash
-$ ls -lh build/shell/android/shell.bundle
-1.9M
-
-$ grep -c "Dr. Sarah" build/shell/android/shell.bundle
-0
-$ grep -c "Mike Johnson" build/shell/android/shell.bundle  
-0
-$ grep -c "Zinger Burger" build/shell/android/shell.bundle
-0
-```
-
-Shell contains no remote module strings (verified).
-
-## Not Verified
-
-- **Not tested on physical device** (requires Android Studio / Xcode + device)
-- **Code signing signatures** not generated (`.sign` files would appear in production device builds)
-- **Not tested on iOS** (macOS with Xcode required)
-- **Not submitted to App Store** (App Store review not performed)
-
 ## Tech Stack
 
 - React Native 0.87.1
 - React 19.2.3
 - Re.Pack 5 (Module Federation for React Native)
 - Webpack 5
-- TypeScript 5
+- TypeScript 6
 - Zustand (state management, persisted via AsyncStorage)
 - Jest 29 (unit tests)
+- Express 4 (backend)
 
 ## License
 

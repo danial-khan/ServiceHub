@@ -21,7 +21,6 @@
     "metro.config.js",
     "jest.config.js",
     "build",
-    "module-host",
     "scripts",
     "__tests__",
     "modules"
