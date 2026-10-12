@@ -42,14 +42,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Debug directory structure
+      - name: Remove frontend node_modules (use hoisted root)
         run: |
-          echo "=== Frontend directory ==="
-          ls -la frontend/ | head -20
-          echo "=== Does frontend/node_modules exist? ==="
-          ls -la frontend/node_modules 2>&1 || echo "No frontend/node_modules"
-          echo "=== Root node_modules/react-native exists? ==="
-          ls -d node_modules/react-native
+          # npm workspaces creates a partial frontend/node_modules
+          # Remove it so Gradle uses the hoisted root node_modules
+          rm -rf frontend/node_modules
 
       - name: Configure release keystore
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
