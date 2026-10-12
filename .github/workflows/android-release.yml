@@ -202,6 +202,7 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
+            set -e
             # Wait for emulator to be ready
             adb wait-for-device
             adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
@@ -229,8 +230,10 @@ jobs:
             adb exec-out screencap -p > screenshot.png
             
             # Check if app process is still running
-            if adb shell "ps -A | grep com.servicehub"; then
+            adb shell "ps -A | grep com.servicehub" > ps-output.txt || true
+            if grep -q "com.servicehub" ps-output.txt; then
               echo "✓ App process is still running"
+              cat ps-output.txt
             else
               echo "✗ App process has crashed or is not running"
               echo "Full logcat:"
