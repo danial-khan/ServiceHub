@@ -56,6 +56,8 @@ jobs:
           # Copy bundle to Android assets
           mkdir -p android/app/src/main/assets
           cp build/shell/android/shell.bundle android/app/src/main/assets/index.android.bundle
+          # Disable React Native bundling in Gradle
+          echo "react.bundleInRelease=false" >> android/gradle.properties
 
       - name: Configure release keystore
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
@@ -87,13 +89,10 @@ jobs:
           sed -i '/signingConfigs {/a\        release {\n            if (project.hasProperty("RELEASE_STORE_FILE")) {\n                storeFile file(project.property("RELEASE_STORE_FILE"))\n                storePassword project.property("RELEASE_STORE_PASSWORD")\n                keyAlias project.property("RELEASE_KEY_ALIAS")\n                keyPassword project.property("RELEASE_KEY_PASSWORD")\n            }\n        }' frontend/android/app/build.gradle
 
       - name: Build release APK
-        env:
-          ENTRY_FILE: index.android.bundle
         run: |
           cd frontend/android
           chmod +x ./gradlew
-          # Skip Metro bundling since we use Webpack
-          ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a -x createBundleReleaseJsAndAssets
+          ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
 
       - name: Determine version
         id: version
