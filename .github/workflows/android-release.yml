@@ -49,13 +49,16 @@ jobs:
           rm -rf frontend/node_modules
           ln -s ../node_modules frontend/node_modules
 
-      - name: Build shell bundle with Re.Pack
+      - name: Build JavaScript bundle with Metro
         run: |
           cd frontend
-          npm run build:shell
-          # Copy bundle to Android assets directory
-          mkdir -p android/app/src/main/assets
-          cp build/shell/android/shell.bundle android/app/src/main/assets/index.android.bundle
+          # Use Metro bundler for production (more reliable than webpack for standalone APK)
+          npx react-native bundle \
+            --platform android \
+            --dev false \
+            --entry-file index.js \
+            --bundle-output android/app/src/main/assets/index.android.bundle \
+            --assets-dest android/app/src/main/res
 
       - name: Configure release keystore
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
