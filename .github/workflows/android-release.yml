@@ -42,24 +42,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Setup frontend node_modules symlink
-        run: |
-          cd frontend
-          rm -rf node_modules
-          ln -s ../node_modules node_modules
-          ls -la node_modules/@react-native/gradle-plugin | head -5
-
-      - name: Build shell bundle
-        run: |
-          cd frontend
-          npm run build:shell
-          # Copy bundle to Android assets
-          mkdir -p android/app/src/main/assets
-          cp build/shell/android/shell.bundle android/app/src/main/assets/index.android.bundle
-          # Disable React Native bundling in Gradle
-          echo "" >> android/gradle.properties
-          echo "bundleInRelease=false" >> android/gradle.properties
-
       - name: Configure release keystore
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
         env:
