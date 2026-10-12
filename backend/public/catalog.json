@@ -8,7 +8,7 @@
       "size": 46709,
       "checksum": "1d075bc4cdf36e2e39d9900eca90691c8e515c878fb76e6a5be7c9992c74bfd5",
       "platform": "android",
-      "updatedAt": "2026-10-12T13:47:40.689Z"
+      "updatedAt": "2026-10-12T15:23:24.098Z"
     },
     {
       "id": "barber",
@@ -18,7 +18,7 @@
       "size": 46709,
       "checksum": "7c25f9d1ae29647ca369fd89070cc0f329eda164f7e69bef3f16da8e518a3038",
       "platform": "android",
-      "updatedAt": "2026-10-12T13:47:40.717Z"
+      "updatedAt": "2026-10-12T15:23:24.124Z"
     },
     {
       "id": "food",
@@ -28,7 +28,7 @@
       "size": 46689,
       "checksum": "d30b4d42120735f5591436a5581ab07387c934f2ba4a81db1140fc1d9d4233cf",
       "platform": "android",
-      "updatedAt": "2026-10-12T13:47:40.746Z"
+      "updatedAt": "2026-10-12T15:23:24.153Z"
     }
   ]
 }
