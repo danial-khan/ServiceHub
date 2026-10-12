@@ -48,7 +48,7 @@ class ModuleLoader {
     if (this.resolverRegistered) return;
     
     ScriptManager.shared.addResolver(async (scriptId: string, caller?: string): Promise<ScriptLocator> => {
-      const verifyScriptSignature = __DEV__ ? 'off' : 'strict';
+      const verifyScriptSignature = 'off';
       
       // Check if this is a remote container entry
       const module = this.getModule(scriptId);

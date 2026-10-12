@@ -79,3 +79,4 @@ backend/dist/
 backend/.env
 .keys/
 .keys/private.pem
+frontend/node_modules

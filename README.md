@@ -4,6 +4,10 @@ React Native portfolio demo showing **on-demand module delivery** with Re.Pack 5
 
 > **Note:** Auth and sample data are mocked. This is a portfolio/architecture demonstration, not a production app.
 
+## Download the App
+
+Pre-built Android APKs are available on the [Releases page](https://github.com/danial-khan/ServiceHub/releases). Download the latest `ServiceHub-v*.apk` to install on your Android device.
+
 ## Architecture
 
 ```mermaid
@@ -266,6 +270,69 @@ Vercel Function (api/index.ts)
 ├── GET /health → { status: 'ok' }
 ├── GET /catalog.json → backend/public/catalog.json
 └── GET /modules/:module/* → backend/public/modules/:module/*
+```
+
+## Android Release Builds & GitHub Releases
+
+The repository includes a GitHub Actions workflow (`.github/workflows/android-release.yml`) that automatically builds and publishes signed Android APKs to GitHub Releases.
+
+### Automated Releases
+
+**Trigger a release:**
+1. Push a version tag: `git tag v1.0.0 && git push origin v1.0.0`
+2. Or manually via [Actions tab](https://github.com/danial-khan/ServiceHub/actions) → "Android Release" → "Run workflow"
+
+The workflow:
+- Builds the React Native bundle (`npm run build:shell`)
+- Compiles the release APK with Gradle (`./gradlew assembleRelease`)
+- Signs the APK (release keystore if configured, debug keystore otherwise)
+- Uploads `ServiceHub-v*.apk` to a GitHub Release
+
+### Configuring Release Signing (Recommended)
+
+For production releases, configure a release keystore using repository secrets. Without these secrets, the APK will be signed with the debug keystore (suitable for testing but not for public distribution).
+
+**1. Generate a release keystore:**
+
+```bash
+keytool -genkeypair -v -storetype PKCS12 -keystore release.keystore \
+  -alias servicehub-release \
+  -keyalg RSA -keysize 2048 -validity 10000 \
+  -dname "CN=ServiceHub, OU=Development, O=YourOrg, L=City, ST=State, C=US"
+```
+
+Enter a keystore password and key password when prompted. **Store these securely.**
+
+**2. Base64-encode the keystore:**
+
+```bash
+base64 -w 0 release.keystore > release.keystore.b64
+# On macOS: base64 -i release.keystore -o release.keystore.b64
+```
+
+**3. Add repository secrets** (Settings → Secrets and variables → Actions → New repository secret):
+
+- `ANDROID_KEYSTORE_BASE64`: Contents of `release.keystore.b64`
+- `ANDROID_KEYSTORE_PASSWORD`: Keystore password from step 1
+- `ANDROID_KEY_ALIAS`: `servicehub-release` (or your chosen alias)
+- `ANDROID_KEY_PASSWORD`: Key password from step 1
+
+**4. Trigger a new release.** The workflow will detect the secrets and sign with the release keystore.
+
+**⚠️ Security:** Never commit `release.keystore` or passwords to git. Add `*.keystore` and `*.b64` to `.gitignore`.
+
+### Manual Local Build (requires Android SDK)
+
+```bash
+# 1. Build the JS bundle
+cd frontend
+npm run build:shell
+
+# 2. Build the APK
+cd android
+./gradlew assembleRelease
+
+# Output: frontend/android/app/build/outputs/apk/release/app-release.apk
 ```
 
 ## Tech Stack
