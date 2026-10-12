@@ -42,11 +42,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Remove frontend node_modules (use hoisted root)
+      - name: Setup node_modules symlink for Gradle
         run: |
           # npm workspaces creates a partial frontend/node_modules
-          # Remove it so Gradle uses the hoisted root node_modules
+          # Remove it and symlink to the hoisted root node_modules
           rm -rf frontend/node_modules
+          ln -s ../node_modules frontend/node_modules
 
       - name: Configure release keystore
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
