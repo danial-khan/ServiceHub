@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  pull_request:
+    paths:
+      - '.github/workflows/android-release.yml'
+      - 'frontend/**'
+      - 'package.json'
+      - 'package-lock.json'
   workflow_dispatch:
     inputs:
       version:
@@ -81,8 +87,10 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
+          elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
             echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=pr-${{ github.event.pull_request.number }}-${{ github.run_number }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Rename APK
@@ -91,8 +99,11 @@ jobs:
           mkdir -p release
           cp frontend/android/app/build/outputs/apk/release/app-release.apk release/ServiceHub-${VERSION}.apk
           ls -lh release/
+          echo "APK_PATH=release/ServiceHub-${VERSION}.apk" >> $GITHUB_ENV
+          stat -c "APK_SIZE=%s bytes (%s)" release/ServiceHub-${VERSION}.apk || stat -f "APK_SIZE=%z bytes" release/ServiceHub-${VERSION}.apk
 
       - name: Create Release
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
