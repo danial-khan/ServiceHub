@@ -37,7 +37,7 @@ react {
     // bundleAssetName = "MyApplication.android.bundle"
     //
     //   The entry file for bundle generation. Default is 'index.android.js' or 'index.js'
-    entryFile = file("../index.js")
+    entryFile = file("../../frontend/index.js")
 
     /* Variants */
     //   The list of variants to that are debuggable. For those we're going to
