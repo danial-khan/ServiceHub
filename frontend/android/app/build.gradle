@@ -139,3 +139,13 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// Disable Gradle bundling - we bundle manually with Re.Pack
+project.afterEvaluate {
+    tasks.findAll { task ->
+        task.name.contains("createBundle") && task.name.contains("JsAndAssets")
+    }.each { bundleTask ->
+        bundleTask.enabled = false
+    }
+}
+
