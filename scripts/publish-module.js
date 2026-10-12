@@ -4,13 +4,16 @@ const crypto = require('crypto');
 
 const moduleName = process.argv[2];
 if (!moduleName) {
-  console.error('Usage: node publish-module.js <module-name>');
+  console.error('Usage: node scripts/publish-module.js <module-name>');
   process.exit(1);
 }
 
-const sourcePath = path.join(__dirname, '..', 'build', 'modules', moduleName, 'android');
-const destPath = path.join(__dirname, '..', 'module-host', 'public', 'modules', moduleName);
-const catalogPath = path.join(__dirname, '..', 'module-host', 'public', 'catalog.json');
+// PUBLIC_BASE_URL can be set to your Vercel URL for production, or left empty for relative URLs
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || '';
+
+const sourcePath = path.join(__dirname, '..', 'frontend', 'build', 'modules', moduleName, 'android');
+const destPath = path.join(__dirname, '..', 'backend', 'public', 'modules', moduleName);
+const catalogPath = path.join(__dirname, '..', 'backend', 'public', 'catalog.json');
 
 // Ensure destination directory exists
 fs.mkdirSync(destPath, { recursive: true });
@@ -53,12 +56,17 @@ if (fs.existsSync(catalogPath)) {
 // Remove old entry if exists
 catalog.modules = catalog.modules.filter(m => m.id !== moduleName);
 
+// Build URL: use PUBLIC_BASE_URL if set, otherwise relative URL
+const moduleUrl = PUBLIC_BASE_URL 
+  ? `${PUBLIC_BASE_URL}/modules/${moduleName}/${containerFile}`
+  : `/modules/${moduleName}/${containerFile}`;
+
 // Add new entry
 catalog.modules.push({
   id: moduleName,
   name: moduleName.charAt(0).toUpperCase() + moduleName.slice(1),
   version: '1.0.0',
-  url: `http://localhost:9000/modules/${moduleName}/${containerFile}`,
+  url: moduleUrl,
   size,
   checksum: hash,
   platform: 'android',
@@ -67,3 +75,4 @@ catalog.modules.push({
 
 fs.writeFileSync(catalogPath, JSON.stringify(catalog, null, 2));
 console.log(`✅ ${moduleName} module published successfully`);
+console.log(`   URL: ${moduleUrl}`);

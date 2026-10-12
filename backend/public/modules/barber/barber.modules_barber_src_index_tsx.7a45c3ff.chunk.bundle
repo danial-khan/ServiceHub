@@ -1,0 +1,322 @@
+(self["webpackChunkBarberModule"] = self["webpackChunkBarberModule"] || []).push([["modules_barber_src_index_tsx","node_modules_babel_runtime_helpers_interopRequireDefault_js-node_modules_babel_runtime_helper-2b0cf10","node_modules_babel_runtime_helpers_interopRequireDefault_js-node_modules_babel_runtime_helper-2b0cf11","node_modules_babel_runtime_helpers_interopRequireDefault_js-node_modules_babel_runtime_helper-2b0cf12"],{
+
+/***/ 7364:
+/***/ (function(__unused_webpack_module, exports) {
+
+Object.defineProperty(exports, "__esModule", ({value:true}));exports.TIME_SLOTS=exports.SERVICES=exports.BARBERSHOPS=exports.BARBERS=void 0;var BARBERSHOPS=exports.BARBERSHOPS=[{id:'shop1',name:'Classic Cuts',rating:4.8,reviewCount:245,address:'123 Main St',distance:'0.5 mi'},{id:'shop2',name:'Modern Gentleman',rating:4.9,reviewCount:312,address:'456 Oak Ave',distance:'1.2 mi'},{id:'shop3',name:'The Barber Shop',rating:4.7,reviewCount:189,address:'789 Pine Rd',distance:'2.1 mi'}];var SERVICES=exports.SERVICES=[{id:'svc1',name:'Haircut',price:25,duration:'30 min'},{id:'svc2',name:'Haircut & Beard Trim',price:35,duration:'45 min'},{id:'svc3',name:'Shave',price:20,duration:'20 min'},{id:'svc4',name:'Hair Coloring',price:60,duration:'60 min'},{id:'svc5',name:'Deluxe Package',price:80,duration:'90 min'}];var BARBERS=exports.BARBERS=[{id:'barber1',name:'Mike Johnson',shopId:'shop1',rating:4.9,experience:'8 years'},{id:'barber2',name:'Alex Brown',shopId:'shop1',rating:4.7,experience:'5 years'},{id:'barber3',name:'Chris Wilson',shopId:'shop2',rating:4.8,experience:'10 years'},{id:'barber4',name:'Sam Davis',shopId:'shop2',rating:4.9,experience:'7 years'},{id:'barber5',name:'Tom Martinez',shopId:'shop3',rating:4.6,experience:'6 years'}];var TIME_SLOTS=exports.TIME_SLOTS=['09:00 AM','10:00 AM','11:00 AM','12:00 PM','01:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM','06:00 PM'];
+
+/***/ }),
+
+/***/ 82054:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+var _interopRequireDefault=__webpack_require__(96784);Object.defineProperty(exports, "__esModule", ({value:true}));exports.getNavigator=exports["default"]=exports.BarberModule=void 0;var _asyncToGenerator2=_interopRequireDefault(__webpack_require__(58155));var _slicedToArray2=_interopRequireDefault(__webpack_require__(18821));var _react=_interopRequireWildcard(__webpack_require__(25657));var _reactNative=__webpack_require__(25870);var _core=__webpack_require__(85608);var _data=__webpack_require__(7364);var _store=__webpack_require__(48799);var _jsxRuntime=__webpack_require__(74848);var _jsxFileName="/workspace/frontend/modules/barber/src/index.tsx";var cache;function _interopRequireWildcard(e,t){if(!t&&e&&e.__esModule)return e;var r,c,a=Object.defineProperty,n={__proto__:null,default:e};if(Object(e)!==e)return n;if(cache||"function"!=typeof WeakMap||(cache=new WeakMap()),cache){if(cache.has(e))return cache.get(e);cache.set(e,n);}for(c in e)"default"!==c&&{}.hasOwnProperty.call(e,c)&&((r=a&&Object.getOwnPropertyDescriptor(e,c))&&(r.get||r.set)?a(n,c,r):n[c]=e[c]);return n;}var BarberModule=({onBack})=>{var _useState=(0,_react.useState)('shops'),_useState2=(0,_slicedToArray2.default)(_useState,2),currentScreen=_useState2[0],setCurrentScreen=_useState2[1];var _useState3=(0,_react.useState)(null),_useState4=(0,_slicedToArray2.default)(_useState3,2),selectedShop=_useState4[0],setSelectedShop=_useState4[1];var _useState5=(0,_react.useState)(null),_useState6=(0,_slicedToArray2.default)(_useState5,2),selectedService=_useState6[0],setSelectedService=_useState6[1];var _useState7=(0,_react.useState)(null),_useState8=(0,_slicedToArray2.default)(_useState7,2),selectedBarber=_useState8[0],setSelectedBarber=_useState8[1];var _useState9=(0,_react.useState)(null),_useState0=(0,_slicedToArray2.default)(_useState9,2),selectedTime=_useState0[0],setSelectedTime=_useState0[1];var _useState1=(0,_react.useState)('2026-10-15'),_useState10=(0,_slicedToArray2.default)(_useState1,1),selectedDate=_useState10[0];var _useState11=(0,_react.useState)(false),_useState12=(0,_slicedToArray2.default)(_useState11,2),isBooking=_useState12[0],setIsBooking=_useState12[1];var _useBarberStore=(0,_store.useBarberStore)(),bookings=_useBarberStore.bookings,loadBookings=_useBarberStore.loadBookings,createBooking=_useBarberStore.createBooking,cancelBooking=_useBarberStore.cancelBooking;_react.default.useEffect(()=>{loadBookings();},[]);var handleConfirmBooking=function(){var _ref=(0,_asyncToGenerator2.default)(function*(){if(!selectedShop||!selectedService||!selectedBarber||!selectedTime)return;setIsBooking(true);try{yield createBooking({shopName:selectedShop.name,barberName:selectedBarber.name,service:selectedService.name,date:selectedDate,time:selectedTime,price:selectedService.price});setCurrentScreen('bookings');}finally{setIsBooking(false);}});return function handleConfirmBooking(){return _ref.apply(this,arguments);};}();if(currentScreen==='shops'){return(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.container,children:[(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.header,children:[(0,_jsxRuntime.jsx)(_core.Button,{title:"\u2190 Back",variant:"ghost",size:"small",onPress:onBack}),(0,_jsxRuntime.jsx)(_core.Text,{variant:"h3",children:"Barbershops"}),(0,_jsxRuntime.jsx)(_core.Button,{title:"Bookings",variant:"ghost",size:"small",onPress:()=>setCurrentScreen('bookings')})]}),(0,_jsxRuntime.jsx)(_reactNative.FlatList,{data:_data.BARBERSHOPS,keyExtractor:item=>item.id,contentContainerStyle:styles.listContent,renderItem:({item})=>(0,_jsxRuntime.jsx)(_reactNative.TouchableOpacity,{onPress:()=>{setSelectedShop(item);setCurrentScreen('services');},children:(0,_jsxRuntime.jsxs)(_core.Card,{style:styles.card,children:[(0,_jsxRuntime.jsx)(_core.Text,{variant:"h4",children:item.name}),(0,_jsxRuntime.jsx)(_core.Text,{variant:"bodySmall",color:_core.theme.colors.textSecondary,children:item.address}),(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.meta,children:[(0,_jsxRuntime.jsxs)(_core.Text,{variant:"bodySmall",children:["\u2605 ",item.rating," (",item.reviewCount,")"]}),(0,_jsxRuntime.jsx)(_core.Text,{variant:"bodySmall",children:item.distance})]})]})})})]});}if(currentScreen==='services'){return(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.container,children:[(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.header,children:[(0,_jsxRuntime.jsx)(_core.Button,{title:"\u2190 Back",variant:"ghost",size:"small",onPress:()=>setCurrentScreen('shops')}),(0,_jsxRuntime.jsx)(_core.Text,{variant:"h3",children:"Select Service"}),(0,_jsxRuntime.jsx)(_reactNative.View,{style:{width:60}})]}),(0,_jsxRuntime.jsx)(_reactNative.FlatList,{data:_data.SERVICES,keyExtractor:item=>item.id,contentContainerStyle:styles.listContent,renderItem:({item})=>(0,_jsxRuntime.jsx)(_reactNative.TouchableOpacity,{onPress:()=>{setSelectedService(item);setCurrentScreen('barbers');},children:(0,_jsxRuntime.jsx)(_core.Card,{style:styles.card,children:(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.serviceRow,children:[(0,_jsxRuntime.jsxs)(_reactNative.View,{style:{flex:1},children:[(0,_jsxRuntime.jsx)(_core.Text,{variant:"h4",children:item.name}),(0,_jsxRuntime.jsx)(_core.Text,{variant:"caption",color:_core.theme.colors.textSecondary,children:item.duration})]}),(0,_jsxRuntime.jsxs)(_core.Text,{variant:"h4",weight:"semibold",children:["$",item.price]})]})})})})]});}if(currentScreen==='barbers'){var shopBarbers=_data.BARBERS.filter(b=>b.shopId===(selectedShop==null?void 0:selectedShop.id));return(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.container,children:[(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.header,children:[(0,_jsxRuntime.jsx)(_core.Button,{title:"\u2190 Back",variant:"ghost",size:"small",onPress:()=>setCurrentScreen('services')}),(0,_jsxRuntime.jsx)(_core.Text,{variant:"h3",children:"Choose Barber"}),(0,_jsxRuntime.jsx)(_reactNative.View,{style:{width:60}})]}),(0,_jsxRuntime.jsx)(_reactNative.FlatList,{data:shopBarbers,keyExtractor:item=>item.id,contentContainerStyle:styles.listContent,renderItem:({item})=>(0,_jsxRuntime.jsx)(_reactNative.TouchableOpacity,{onPress:()=>{setSelectedBarber(item);setCurrentScreen('time');},children:(0,_jsxRuntime.jsx)(_core.Card,{style:styles.card,children:(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.barberRow,children:[(0,_jsxRuntime.jsx)(_reactNative.View,{style:styles.avatar,children:(0,_jsxRuntime.jsx)(_core.Text,{variant:"h4",color:_core.theme.colors.white,children:item.name[0]})}),(0,_jsxRuntime.jsxs)(_reactNative.View,{style:{flex:1},children:[(0,_jsxRuntime.jsx)(_core.Text,{variant:"h4",children:item.name}),(0,_jsxRuntime.jsxs)(_core.Text,{variant:"caption",color:_core.theme.colors.textSecondary,children:[item.experience," experience"]}),(0,_jsxRuntime.jsxs)(_core.Text,{variant:"bodySmall",children:["\u2605 ",item.rating]})]})]})})})})]});}if(currentScreen==='time'){return(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.container,children:[(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.header,children:[(0,_jsxRuntime.jsx)(_core.Button,{title:"\u2190 Back",variant:"ghost",size:"small",onPress:()=>setCurrentScreen('barbers')}),(0,_jsxRuntime.jsx)(_core.Text,{variant:"h3",children:"Select Time"}),(0,_jsxRuntime.jsx)(_reactNative.View,{style:{width:60}})]}),(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.content,children:[(0,_jsxRuntime.jsxs)(_core.Card,{children:[(0,_jsxRuntime.jsx)(_core.Text,{variant:"h4",children:"Booking Summary"}),(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.summary,children:[(0,_jsxRuntime.jsxs)(_core.Text,{variant:"bodySmall",color:_core.theme.colors.textSecondary,children:["Shop: ",selectedShop==null?void 0:selectedShop.name]}),(0,_jsxRuntime.jsxs)(_core.Text,{variant:"bodySmall",color:_core.theme.colors.textSecondary,children:["Service: ",selectedService==null?void 0:selectedService.name]}),(0,_jsxRuntime.jsxs)(_core.Text,{variant:"bodySmall",color:_core.theme.colors.textSecondary,children:["Barber: ",selectedBarber==null?void 0:selectedBarber.name]}),(0,_jsxRuntime.jsxs)(_core.Text,{variant:"bodySmall",color:_core.theme.colors.textSecondary,children:["Date: ",selectedDate]}),(0,_jsxRuntime.jsxs)(_core.Text,{variant:"body",weight:"semibold",children:["Price: $",selectedService==null?void 0:selectedService.price]})]})]}),(0,_jsxRuntime.jsx)(_core.Text,{variant:"h4",children:"Available Times"}),(0,_jsxRuntime.jsx)(_reactNative.View,{style:styles.timeGrid,children:_data.TIME_SLOTS.map(time=>(0,_jsxRuntime.jsx)(_reactNative.TouchableOpacity,{onPress:()=>setSelectedTime(time),style:[styles.timeSlot,selectedTime===time&&styles.timeSlotSelected],children:(0,_jsxRuntime.jsx)(_core.Text,{variant:"body",color:selectedTime===time?_core.theme.colors.white:_core.theme.colors.text,children:time})},time))}),(0,_jsxRuntime.jsx)(_core.Button,{title:"Confirm Booking",onPress:handleConfirmBooking,disabled:!selectedTime,loading:isBooking,fullWidth:true})]})]});}return(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.container,children:[(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.header,children:[(0,_jsxRuntime.jsx)(_core.Button,{title:"\u2190 Back",variant:"ghost",size:"small",onPress:()=>setCurrentScreen('shops')}),(0,_jsxRuntime.jsx)(_core.Text,{variant:"h3",children:"My Bookings"}),(0,_jsxRuntime.jsx)(_reactNative.View,{style:{width:60}})]}),bookings.length===0?(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.empty,children:[(0,_jsxRuntime.jsx)(_core.Text,{variant:"h4",children:"No bookings yet"}),(0,_jsxRuntime.jsx)(_core.Button,{title:"Find a Barbershop",onPress:()=>setCurrentScreen('shops')})]}):(0,_jsxRuntime.jsx)(_reactNative.FlatList,{data:bookings,keyExtractor:item=>item.id,contentContainerStyle:styles.listContent,renderItem:({item})=>(0,_jsxRuntime.jsxs)(_core.Card,{style:styles.card,children:[(0,_jsxRuntime.jsx)(_core.Text,{variant:"h4",children:item.shopName}),(0,_jsxRuntime.jsxs)(_core.Text,{variant:"bodySmall",color:_core.theme.colors.textSecondary,children:[item.service," with ",item.barberName]}),(0,_jsxRuntime.jsxs)(_reactNative.View,{style:styles.bookingDetails,children:[(0,_jsxRuntime.jsxs)(_core.Text,{variant:"body",children:[item.date," at ",item.time]}),(0,_jsxRuntime.jsxs)(_core.Text,{variant:"body",weight:"semibold",children:["$",item.price]})]}),item.status==='upcoming'&&(0,_jsxRuntime.jsx)(_core.Button,{title:"Cancel",variant:"outline",size:"small",onPress:()=>cancelBooking(item.id)})]})})]});};exports.BarberModule=BarberModule;var getNavigator=()=>BarberModule;exports.getNavigator=getNavigator;var _default=exports["default"]=BarberModule;var styles=_reactNative.StyleSheet.create({container:{flex:1,backgroundColor:_core.theme.colors.background},header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',padding:_core.theme.spacing.md,paddingTop:_core.theme.spacing.xxl,backgroundColor:_core.theme.colors.surface,..._core.theme.shadows.sm},listContent:{padding:_core.theme.spacing.lg},content:{flex:1,padding:_core.theme.spacing.lg,gap:_core.theme.spacing.lg},card:{marginBottom:_core.theme.spacing.md},meta:{flexDirection:'row',justifyContent:'space-between',marginTop:_core.theme.spacing.sm},serviceRow:{flexDirection:'row',alignItems:'center',gap:_core.theme.spacing.md},barberRow:{flexDirection:'row',alignItems:'center',gap:_core.theme.spacing.md},avatar:{width:50,height:50,borderRadius:_core.theme.borderRadius.full,backgroundColor:_core.theme.colors.secondary,justifyContent:'center',alignItems:'center'},summary:{marginTop:_core.theme.spacing.md,gap:_core.theme.spacing.xs},timeGrid:{flexDirection:'row',flexWrap:'wrap',gap:_core.theme.spacing.sm},timeSlot:{paddingVertical:_core.theme.spacing.sm,paddingHorizontal:_core.theme.spacing.md,borderRadius:_core.theme.borderRadius.md,backgroundColor:_core.theme.colors.backgroundSecondary,borderWidth:1,borderColor:_core.theme.colors.border,minWidth:100,alignItems:'center'},timeSlotSelected:{backgroundColor:_core.theme.colors.primary,borderColor:_core.theme.colors.primary},empty:{flex:1,justifyContent:'center',alignItems:'center',gap:_core.theme.spacing.md},bookingDetails:{flexDirection:'row',justifyContent:'space-between',marginTop:_core.theme.spacing.sm,marginBottom:_core.theme.spacing.sm}});
+
+/***/ }),
+
+/***/ 48799:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+var _interopRequireDefault=__webpack_require__(96784);Object.defineProperty(exports, "__esModule", ({value:true}));exports.useBarberStore=void 0;var _asyncToGenerator2=_interopRequireDefault(__webpack_require__(58155));var _zustand=__webpack_require__(32535);var _asyncStorage=_interopRequireDefault(__webpack_require__(90677));var BOOKINGS_KEY='@servicehub:barber_bookings';var useBarberStore=exports.useBarberStore=(0,_zustand.create)((set,get)=>({bookings:[],isLoading:false,loadBookings:function(){var _ref=(0,_asyncToGenerator2.default)(function*(){set({isLoading:true});try{var stored=yield _asyncStorage.default.getItem(BOOKINGS_KEY);if(stored){var bookings=JSON.parse(stored);set({bookings,isLoading:false});}else{set({isLoading:false});}}catch(error){console.error('Failed to load bookings:',error);set({isLoading:false});}});return function loadBookings(){return _ref.apply(this,arguments);};}(),createBooking:function(){var _ref2=(0,_asyncToGenerator2.default)(function*(booking){var newBooking={...booking,id:`booking-${Date.now()}`,status:'upcoming'};var bookings=[...get().bookings,newBooking];set({bookings});yield _asyncStorage.default.setItem(BOOKINGS_KEY,JSON.stringify(bookings));});return function createBooking(_x){return _ref2.apply(this,arguments);};}(),cancelBooking:function(){var _ref3=(0,_asyncToGenerator2.default)(function*(id){var bookings=get().bookings.map(booking=>booking.id===id?{...booking,status:'cancelled'}:booking);set({bookings});yield _asyncStorage.default.setItem(BOOKINGS_KEY,JSON.stringify(bookings));});return function cancelBooking(_x2){return _ref3.apply(this,arguments);};}()}));
+
+/***/ }),
+
+/***/ 29698:
+/***/ (function(__unused_webpack_module, exports) {
+
+"use strict";
+/**
+ * @license React
+ * react-jsx-runtime.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+
+var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"),
+  REACT_FRAGMENT_TYPE = Symbol.for("react.fragment");
+function jsxProd(type, config, maybeKey) {
+  var key = null;
+  void 0 !== maybeKey && (key = "" + maybeKey);
+  void 0 !== config.key && (key = "" + config.key);
+  if ("key" in config) {
+    maybeKey = {};
+    for (var propName in config)
+      "key" !== propName && (maybeKey[propName] = config[propName]);
+  } else maybeKey = config;
+  config = maybeKey.ref;
+  return {
+    $$typeof: REACT_ELEMENT_TYPE,
+    type: type,
+    key: key,
+    ref: void 0 !== config ? config : null,
+    props: maybeKey
+  };
+}
+exports.Fragment = REACT_FRAGMENT_TYPE;
+exports.jsx = jsxProd;
+exports.jsxs = jsxProd;
+
+
+/***/ }),
+
+/***/ 74848:
+/***/ (function(module, __unused_webpack_exports, __webpack_require__) {
+
+"use strict";
+
+
+if (true) {
+  module.exports = __webpack_require__(29698);
+} else // removed by dead control flow
+{}
+
+
+/***/ }),
+
+/***/ 78113:
+/***/ (function(module) {
+
+function _arrayLikeToArray(r, a) {
+  (null == a || a > r.length) && (a = r.length);
+  for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e];
+  return n;
+}
+module.exports = _arrayLikeToArray, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ 70569:
+/***/ (function(module) {
+
+function _arrayWithHoles(r) {
+  if (Array.isArray(r)) return r;
+}
+module.exports = _arrayWithHoles, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ 58155:
+/***/ (function(module) {
+
+function asyncGeneratorStep(n, t, e, r, o, a, c) {
+  try {
+    var i = n[a](c),
+      u = i.value;
+  } catch (n) {
+    return void e(n);
+  }
+  i.done ? t(u) : Promise.resolve(u).then(r, o);
+}
+function _asyncToGenerator(n) {
+  return function () {
+    var t = this,
+      e = arguments;
+    return new Promise(function (r, o) {
+      var a = n.apply(t, e);
+      function _next(n) {
+        asyncGeneratorStep(a, r, o, _next, _throw, "next", n);
+      }
+      function _throw(n) {
+        asyncGeneratorStep(a, r, o, _next, _throw, "throw", n);
+      }
+      _next(void 0);
+    });
+  };
+}
+module.exports = _asyncToGenerator, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ 96784:
+/***/ (function(module) {
+
+function _interopRequireDefault(e) {
+  return e && e.__esModule ? e : {
+    "default": e
+  };
+}
+module.exports = _interopRequireDefault, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ 65474:
+/***/ (function(module) {
+
+function _iterableToArrayLimit(r, l) {
+  var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
+  if (null != t) {
+    var e,
+      n,
+      i,
+      u,
+      a = [],
+      f = !0,
+      o = !1;
+    try {
+      if (i = (t = t.call(r)).next, 0 === l) {
+        if (Object(t) !== t) return;
+        f = !1;
+      } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0);
+    } catch (r) {
+      o = !0, n = r;
+    } finally {
+      try {
+        if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return;
+      } finally {
+        if (o) throw n;
+      }
+    }
+    return a;
+  }
+}
+module.exports = _iterableToArrayLimit, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ 11018:
+/***/ (function(module) {
+
+function _nonIterableRest() {
+  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
+module.exports = _nonIterableRest, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ 18821:
+/***/ (function(module, __unused_webpack_exports, __webpack_require__) {
+
+var arrayWithHoles = __webpack_require__(70569);
+var iterableToArrayLimit = __webpack_require__(65474);
+var unsupportedIterableToArray = __webpack_require__(37744);
+var nonIterableRest = __webpack_require__(11018);
+function _slicedToArray(r, e) {
+  return arrayWithHoles(r) || iterableToArrayLimit(r, e) || unsupportedIterableToArray(r, e) || nonIterableRest();
+}
+module.exports = _slicedToArray, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ 37744:
+/***/ (function(module, __unused_webpack_exports, __webpack_require__) {
+
+var arrayLikeToArray = __webpack_require__(78113);
+function _unsupportedIterableToArray(r, a) {
+  if (r) {
+    if ("string" == typeof r) return arrayLikeToArray(r, a);
+    var t = {}.toString.call(r).slice(8, -1);
+    return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? arrayLikeToArray(r, a) : void 0;
+  }
+}
+module.exports = _unsupportedIterableToArray, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ 32535:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var vanilla = __webpack_require__(32248);
+var react = __webpack_require__(74736);
+
+
+
+Object.keys(vanilla).forEach(function (k) {
+	if (k !== 'default' && !Object.prototype.hasOwnProperty.call(exports, k)) Object.defineProperty(exports, k, {
+		enumerable: true,
+		get: function () { return vanilla[k]; }
+	});
+});
+Object.keys(react).forEach(function (k) {
+	if (k !== 'default' && !Object.prototype.hasOwnProperty.call(exports, k)) Object.defineProperty(exports, k, {
+		enumerable: true,
+		get: function () { return react[k]; }
+	});
+});
+
+
+/***/ }),
+
+/***/ 74736:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var React = __webpack_require__(30213);
+var vanilla = __webpack_require__(32248);
+
+const identity = (arg) => arg;
+function useStore(api, selector = identity) {
+  const slice = React.useSyncExternalStore(
+    api.subscribe,
+    React.useCallback(() => selector(api.getState()), [api, selector]),
+    React.useCallback(() => selector(api.getInitialState()), [api, selector])
+  );
+  React.useDebugValue(slice);
+  return slice;
+}
+const createImpl = (createState) => {
+  const api = vanilla.createStore(createState);
+  const useBoundStore = (selector) => useStore(api, selector);
+  Object.assign(useBoundStore, api);
+  return useBoundStore;
+};
+const create = ((createState) => createState ? createImpl(createState) : createImpl);
+
+exports.create = create;
+exports.useStore = useStore;
+
+
+/***/ }),
+
+/***/ 32248:
+/***/ (function(__unused_webpack_module, exports) {
+
+"use strict";
+
+
+const createStoreImpl = (createState) => {
+  let state;
+  const listeners = /* @__PURE__ */ new Set();
+  const setState = (partial, replace) => {
+    const nextState = typeof partial === "function" ? partial(state) : partial;
+    if (!Object.is(nextState, state)) {
+      const previousState = state;
+      state = (replace != null ? replace : typeof nextState !== "object" || nextState === null) ? nextState : Object.assign({}, state, nextState);
+      listeners.forEach((listener) => listener(state, previousState));
+    }
+  };
+  const getState = () => state;
+  const getInitialState = () => initialState;
+  const subscribe = (listener) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  };
+  const api = { setState, getState, getInitialState, subscribe };
+  const initialState = state = createState(setState, getState, api);
+  return api;
+};
+const createStore = ((createState) => createState ? createStoreImpl(createState) : createStoreImpl);
+
+exports.createStore = createStore;
+
+
+/***/ }),
+
+/***/ 90677:
+/***/ (function(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+Object.defineProperty(exports,"__esModule",{value:true});Object.defineProperty(exports,"AsyncStorageError",{enumerable:true,get:function(){return _AsyncStorageError.AsyncStorageError;}});Object.defineProperty(exports,"createAsyncStorage",{enumerable:true,get:function(){return _createAsyncStorage.createAsyncStorage;}});exports.default=void 0;var _createAsyncStorage=require("./createAsyncStorage");var _AsyncStorageError=require("./AsyncStorageError.js");var _default=exports.default=(0,_createAsyncStorage.getLegacyStorage)();
+
+/***/ })
+
+}]);
