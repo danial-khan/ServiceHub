@@ -42,15 +42,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build webpack bundle and copy to assets
-        run: |
-          cd frontend
-          # Build production bundle with webpack
-          npx webpack-cli --config webpack.config.mjs --mode production --env platform=android --env mode=production
-          # Copy to standard React Native assets directory
-          mkdir -p android/app/src/main/assets
-          cp build/shell/android/index.android.bundle android/app/src/main/assets/
-
       - name: Setup node_modules symlink for Gradle
         run: |
           # npm workspaces creates a partial frontend/node_modules
@@ -219,6 +210,11 @@ jobs:
             adb shell "ps -A | grep com.servicehub" > ps-output.txt && echo "✓ App process is still running" && cat ps-output.txt || (echo "✗ App process has crashed or is not running" && echo "Full logcat:" && cat logcat-react.txt && exit 1)
             echo "=== Error logcat ===" && cat logcat-errors.txt
             echo "=== React/Fatal logcat ===" && cat logcat-react.txt
+            if grep -qE 'FATAL EXCEPTION|ReferenceError' logcat-react.txt logcat-errors.txt; then
+              echo "✗ FATAL or ReferenceError found in logcat"
+              exit 1
+            fi
+            echo "✓ No FATAL or ReferenceError in logcat"
 
       - name: Upload logcat
         if: always()
