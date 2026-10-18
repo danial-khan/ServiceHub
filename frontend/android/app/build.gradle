@@ -94,6 +94,10 @@ dependencies {
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {
+        // Exclude Hermes and use JSC
+        implementation("com.facebook.react:react-android") {
+            exclude group: "com.facebook.react", module: "hermes-android"
+        }
         implementation jscFlavor
     }
 }
@@ -104,6 +108,17 @@ project.afterEvaluate {
         task.name.contains("createBundle") && task.name.contains("JsAndAssets")
     }.each { bundleTask ->
         bundleTask.enabled = false
+    }
+    
+    // Ensure Hermes native libraries are not included in the APK
+    tasks.findAll { task ->
+        task.name.contains("merge") && task.name.contains("NativeLibs")
+    }.each { mergeTask ->
+        mergeTask.doFirst {
+            configurations.all {
+                exclude group: "com.facebook.react", module: "hermes-android"
+            }
+        }
     }
 }
 
