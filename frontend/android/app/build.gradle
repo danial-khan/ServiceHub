@@ -107,16 +107,16 @@ project.afterEvaluate {
     }.each { bundleTask ->
         bundleTask.doFirst {
             // Copy webpack bundle to where Gradle expects it
-            def webpackBundle = file("../build/shell/android/index.android.bundle")
+            def webpackBundle = file("../../frontend/build/shell/android/index.android.bundle")
             def gradleAssets = file("${buildDir}/generated/assets/react/release")
             gradleAssets.mkdirs()
             
             if (webpackBundle.exists()) {
                 println "Copying webpack bundle from ${webpackBundle} to ${gradleAssets}"
                 copy {
-                    from webpackBundle
+                    from webpackBundle.parentFile
                     into gradleAssets
-                    rename { "index.android.bundle" }
+                    include "index.android.bundle"
                 }
             } else {
                 throw new GradleException("Webpack bundle not found at ${webpackBundle}. Run webpack build first.")
