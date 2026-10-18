@@ -98,36 +98,12 @@ dependencies {
     }
 }
 
-// Disable the entire bundle task - webpack bundle is pre-built in CI
-// Copy it directly to the final assets location
+// Disable Metro bundling - webpack bundle is pre-built and copied to assets in CI
 project.afterEvaluate {
     tasks.findAll { task ->
         task.name.contains("createBundle") && task.name.contains("JsAndAssets")
     }.each { bundleTask ->
         bundleTask.enabled = false
-    }
-    
-    // Copy webpack bundle to final assets directory before packaging
-    tasks.findAll { task ->
-        task.name == "mergeReleaseAssets"
-    }.each { mergeTask ->
-        mergeTask.doFirst {
-            // From frontend/android/app/ -> ../../ gets to frontend/
-            def webpackBundle = file("../../build/shell/android/index.android.bundle")
-            def finalAssets = file("${buildDir}/intermediates/assets/release/mergeReleaseAssets")
-            finalAssets.mkdirs()
-            
-            if (webpackBundle.exists()) {
-                println "Copying webpack bundle to final assets: ${finalAssets}"
-                copy {
-                    from webpackBundle.parentFile
-                    into finalAssets
-                    include "index.android.bundle"
-                }
-            } else {
-                throw new GradleException("Webpack bundle not found at ${webpackBundle}")
-            }
-        }
     }
 }
 

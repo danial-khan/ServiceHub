@@ -42,11 +42,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build webpack bundle
+      - name: Build webpack bundle and copy to assets
         run: |
           cd frontend
           # Build production bundle with webpack
           npx webpack-cli --config webpack.config.mjs --mode production --env platform=android --env mode=production
+          # Copy to standard React Native assets directory
+          mkdir -p android/app/src/main/assets
+          cp build/shell/android/index.android.bundle android/app/src/main/assets/
 
       - name: Setup node_modules symlink for Gradle
         run: |
