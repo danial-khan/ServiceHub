@@ -98,29 +98,34 @@ dependencies {
     }
 }
 
-// Disable Metro bundling - webpack bundle is built in CI
-// But allow Hermes compilation to run
+// Disable the entire bundle task - webpack bundle is pre-built in CI
+// Copy it directly to the final assets location
 project.afterEvaluate {
     tasks.findAll { task ->
-        // Only disable the bundle creation, not Hermes compilation
-        task.name == "createBundleReleaseJsAndAssets" && !task.name.contains("Hermes")
+        task.name.contains("createBundle") && task.name.contains("JsAndAssets")
     }.each { bundleTask ->
-        bundleTask.doFirst {
-            // Copy webpack bundle to where Gradle expects it
+        bundleTask.enabled = false
+    }
+    
+    // Copy webpack bundle to final assets directory before packaging
+    tasks.findAll { task ->
+        task.name == "mergeReleaseAssets"
+    }.each { mergeTask ->
+        mergeTask.doFirst {
             // From frontend/android/app/ -> ../../ gets to frontend/
             def webpackBundle = file("../../build/shell/android/index.android.bundle")
-            def gradleAssets = file("${buildDir}/generated/assets/react/release")
-            gradleAssets.mkdirs()
+            def finalAssets = file("${buildDir}/intermediates/assets/release/mergeReleaseAssets")
+            finalAssets.mkdirs()
             
             if (webpackBundle.exists()) {
-                println "Copying webpack bundle from ${webpackBundle} to ${gradleAssets}"
+                println "Copying webpack bundle to final assets: ${finalAssets}"
                 copy {
                     from webpackBundle.parentFile
-                    into gradleAssets
+                    into finalAssets
                     include "index.android.bundle"
                 }
             } else {
-                throw new GradleException("Webpack bundle not found at ${webpackBundle}. Run webpack build first.")
+                throw new GradleException("Webpack bundle not found at ${webpackBundle}")
             }
         }
     }
