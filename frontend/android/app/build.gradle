@@ -48,6 +48,10 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
+    buildFeatures {
+        buildConfig true
+    }
+
     namespace "com.servicehub"
     defaultConfig {
         applicationId "com.servicehub"
