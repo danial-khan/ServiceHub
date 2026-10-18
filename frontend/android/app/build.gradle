@@ -113,7 +113,7 @@ project.afterEvaluate {
             outputDir.mkdirs()
             
             // Run webpack to build the bundle
-            exec {
+            project.exec {
                 workingDir root
                 commandLine "node", "node_modules/webpack-cli/bin/cli.js", 
                     "--config", "frontend/webpack.config.mjs",
@@ -128,7 +128,7 @@ project.afterEvaluate {
             }
             
             // Copy webpack output to expected Gradle location
-            copy {
+            project.copy {
                 from file("../build/shell/${platform}")
                 into outputDir
                 include "index.android.bundle"
