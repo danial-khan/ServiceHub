@@ -12,7 +12,11 @@ export default (env) => {
     minimize = mode === 'production',
     devServer = undefined,
     reactNativePath = new URL('./node_modules/react-native', import.meta.url).pathname,
+    bundleFilename = undefined,
   } = env;
+
+  // When called by React Native CLI, use the provided bundleFilename
+  const outputFilename = bundleFilename || 'shell.bundle';
 
   return {
     mode,
@@ -53,7 +57,7 @@ export default (env) => {
       clean: true,
       hashFunction: 'xxhash64',
       path: path.join(dirname, 'build/shell', platform),
-      filename: 'shell.bundle',
+      filename: outputFilename,
       chunkFilename: '[name].[chunkhash:8].chunk.bundle',
       publicPath: Repack.getPublicPath({ platform, devServer }),
       uniqueName: 'ServiceHubShell',

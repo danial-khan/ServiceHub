@@ -49,17 +49,6 @@ jobs:
           rm -rf frontend/node_modules
           ln -s ../node_modules frontend/node_modules
 
-      - name: Build JavaScript bundle with Metro
-        run: |
-          cd frontend
-          # Use Metro bundler for production (more reliable than webpack for standalone APK)
-          npx react-native bundle \
-            --platform android \
-            --dev false \
-            --entry-file index.js \
-            --bundle-output android/app/src/main/assets/index.android.bundle \
-            --assets-dest android/app/src/main/res
-
       - name: Configure release keystore
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
         env:
