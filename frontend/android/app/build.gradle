@@ -107,7 +107,8 @@ project.afterEvaluate {
     }.each { bundleTask ->
         bundleTask.doFirst {
             // Copy webpack bundle to where Gradle expects it
-            def webpackBundle = file("../../frontend/build/shell/android/index.android.bundle")
+            // From frontend/android/app/ -> ../../ gets to frontend/
+            def webpackBundle = file("../../build/shell/android/index.android.bundle")
             def gradleAssets = file("${buildDir}/generated/assets/react/release")
             gradleAssets.mkdirs()
             
