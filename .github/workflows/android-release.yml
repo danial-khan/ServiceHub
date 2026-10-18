@@ -210,11 +210,7 @@ jobs:
             adb shell "ps -A | grep com.servicehub" > ps-output.txt && echo "✓ App process is still running" && cat ps-output.txt || (echo "✗ App process has crashed or is not running" && echo "Full logcat:" && cat logcat-react.txt && exit 1)
             echo "=== Error logcat ===" && cat logcat-errors.txt
             echo "=== React/Fatal logcat ===" && cat logcat-react.txt
-            if grep -qE 'FATAL EXCEPTION|ReferenceError' logcat-react.txt logcat-errors.txt; then
-              echo "✗ FATAL or ReferenceError found in logcat"
-              exit 1
-            fi
-            echo "✓ No FATAL or ReferenceError in logcat"
+            if grep -qE 'FATAL EXCEPTION|ReferenceError' logcat-react.txt logcat-errors.txt; then echo "✗ FATAL or ReferenceError found in logcat"; exit 1; else echo "✓ No FATAL or ReferenceError in logcat"; fi
 
       - name: Upload logcat
         if: always()

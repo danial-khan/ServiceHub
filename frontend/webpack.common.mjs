@@ -47,7 +47,7 @@ export const sharedModuleRules = [
 export const sharedDeps = {
   react: {
     singleton: true,
-    requiredVersion: '19.2.3',
+    requiredVersion: '19.3.0',
   },
   'react-native': {
     singleton: true,
