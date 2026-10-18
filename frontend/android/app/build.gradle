@@ -98,40 +98,28 @@ dependencies {
     }
 }
 
-// Custom task to bundle with Re.Pack webpack
+// Disable Metro bundling - webpack bundle is built in CI
+// But allow Hermes compilation to run
 project.afterEvaluate {
     tasks.findAll { task ->
-        task.name.contains("createBundle") && task.name.contains("JsAndAssets")
+        // Only disable the bundle creation, not Hermes compilation
+        task.name == "createBundleReleaseJsAndAssets" && !task.name.contains("Hermes")
     }.each { bundleTask ->
         bundleTask.doFirst {
-            def root = file("../..")
-            def platform = "android"
-            def mode = bundleTask.name.contains("Release") ? "production" : "development"
-            def outputDir = file("${buildDir}/generated/assets/react/release")
-            def bundleFile = file("${outputDir}/index.android.bundle")
+            // Copy webpack bundle to where Gradle expects it
+            def webpackBundle = file("../build/shell/android/index.android.bundle")
+            def gradleAssets = file("${buildDir}/generated/assets/react/release")
+            gradleAssets.mkdirs()
             
-            outputDir.mkdirs()
-            
-            // Run webpack to build the bundle
-            project.exec {
-                workingDir root
-                commandLine "node", "node_modules/webpack-cli/bin/cli.js", 
-                    "--config", "frontend/webpack.config.mjs",
-                    "--mode", mode,
-                    "--env", "platform=${platform}",
-                    "--env", "mode=${mode}",
-                    "--env", "bundleFilename=index.android.bundle",
-                    "--env", "context=${file("../").absolutePath}",
-                    "--env", "entry=./index.js"
-                environment "BABEL_ENV", mode
-                environment "NODE_ENV", mode
-            }
-            
-            // Copy webpack output to expected Gradle location
-            project.copy {
-                from file("../build/shell/${platform}")
-                into outputDir
-                include "index.android.bundle"
+            if (webpackBundle.exists()) {
+                println "Copying webpack bundle from ${webpackBundle} to ${gradleAssets}"
+                copy {
+                    from webpackBundle
+                    into gradleAssets
+                    rename { "index.android.bundle" }
+                }
+            } else {
+                throw new GradleException("Webpack bundle not found at ${webpackBundle}. Run webpack build first.")
             }
         }
     }

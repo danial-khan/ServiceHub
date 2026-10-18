@@ -16,7 +16,8 @@ export default (env) => {
   } = env;
 
   // When called by React Native CLI, use the provided bundleFilename
-  const outputFilename = bundleFilename || 'shell.bundle';
+  // Otherwise use index.android.bundle for production
+  const outputFilename = bundleFilename || (mode === 'production' ? 'index.android.bundle' : 'shell.bundle');
 
   return {
     mode,
