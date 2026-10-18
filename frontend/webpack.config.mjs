@@ -1,61 +1,30 @@
-import path from 'path';
 import * as Repack from '@callstack/repack';
+import { sharedModuleRules, sharedResolve, sharedDeps } from './webpack.common.mjs';
 
-const dirname = Repack.getDirname(import.meta.url);
-
+/**
+ * Host / shell bundler config.
+ *
+ * Output path and filename are left to Re.Pack defaults + CLI flags so Gradle's
+ * `webpack-bundle` command can write `index.android.bundle` and Hermes can
+ * compile it. Do not set `target` / `output.chunkLoading` here — RepackPlugin
+ * applies RepackTargetPlugin, which sets the React Native runtime
+ * (`target: false`, `chunkLoading: 'jsonp'`, `chunkFormat: 'array-push'`).
+ */
 export default (env) => {
   const {
     mode = 'development',
-    context = dirname,
+    context = Repack.getDirname(import.meta.url),
     entry = './index.js',
     platform = process.env.PLATFORM || 'android',
     minimize = mode === 'production',
-    devServer = undefined,
-    reactNativePath = new URL('./node_modules/react-native', import.meta.url).pathname,
   } = env;
 
   return {
     mode,
-    devtool: false,
     context,
-    entry: entry,
-    resolve: {
-      ...Repack.getResolveOptions(platform),
-      alias: {
-        '@servicehub/core': path.join(dirname, 'packages/core/src'),
-        '@module-federation/runtime/helpers': path.join(dirname, '..', 'node_modules/@module-federation/runtime/dist/helpers.js'),
-        '@module-federation/error-codes/browser': path.join(dirname, '..', 'node_modules/@module-federation/error-codes/dist/browser.cjs'),
-        '@react-native/asset-utils': path.join(dirname, '..', 'node_modules/@react-native/asset-utils/src/index.js'),
-      },
-      modules: [
-        'node_modules',
-        path.join(dirname, 'node_modules'),
-        path.join(dirname, '..', 'node_modules'),
-      ],
-      extensions: [
-        `.${platform}.tsx`,
-        `.${platform}.ts`,
-        `.${platform}.jsx`,
-        `.${platform}.js`,
-        '.native.tsx',
-        '.native.ts',
-        '.native.jsx',
-        '.native.js',
-        '.tsx',
-        '.ts',
-        '.jsx',
-        '.js',
-        '.json',
-      ],
-      fullySpecified: false,
-    },
+    entry,
+    resolve: sharedResolve,
     output: {
-      clean: true,
-      hashFunction: 'xxhash64',
-      path: path.join(dirname, 'build/shell', platform),
-      filename: 'shell.bundle',
-      chunkFilename: '[name].[chunkhash:8].chunk.bundle',
-      publicPath: Repack.getPublicPath({ platform, devServer }),
       uniqueName: 'ServiceHubShell',
     },
     optimization: {
@@ -63,53 +32,18 @@ export default (env) => {
       chunkIds: 'named',
     },
     module: {
-      rules: [
-        {
-          test: /\.[cm]?[jt]sx?$/,
-          exclude: [
-            /node_modules\/(?!(@react-native|react-native|@react-native-async-storage|@react-navigation))/,
-          ],
-          use: {
-            loader: 'babel-loader',
-          },
-        },
-        {
-          test: /\.js$/,
-          include: [
-            /node_modules\/@callstack\/repack\/mf/,
-            /node_modules\/@callstack\/repack\/dist\/modules/,
-            /node_modules\/@callstack\/repack\/client/,
-          ],
-          type: 'javascript/esm',
-        },
-        Repack.REACT_NATIVE_LOADING_RULES,
-      ],
+      rules: sharedModuleRules,
     },
     plugins: [
-      new Repack.RepackPlugin({
-        context,
-        mode,
-        platform,
-        devServer,
-      }),
-      new Repack.plugins.ModuleFederationPlugin({
+      new Repack.RepackPlugin({ platform }),
+      new Repack.plugins.ModuleFederationPluginV2({
         name: 'ServiceHubShell',
-        remotes: {}, // Remotes registered dynamically at runtime from catalog
+        dts: false,
+        remotes: {},
         shared: {
-          react: {
-            singleton: true,
-            eager: true,
-            requiredVersion: '19.2.3',
-          },
-          'react-native': {
-            singleton: true,
-            eager: true,
-            requiredVersion: '0.87.1',
-          },
-          '@servicehub/core': {
-            singleton: true,
-            eager: true,
-          },
+          react: { ...sharedDeps.react, eager: true },
+          'react-native': { ...sharedDeps['react-native'], eager: true },
+          '@servicehub/core': { ...sharedDeps['@servicehub/core'], eager: true },
         },
       }),
     ],
