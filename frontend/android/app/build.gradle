@@ -17,10 +17,6 @@ react {
     //   The cli.js file which is the React Native CLI entrypoint. Default is ../../node_modules/react-native/cli.js
     cliFile = file("../../node_modules/react-native/cli.js")
 
-    /* Bundling */
-    //   Use Re.Pack's webpack-bundle command instead of Metro
-    bundleCommand = "webpack-bundle"
-
     /* Autolinking */
     autolinkLibrariesWithApp()
 }
@@ -99,6 +95,47 @@ dependencies {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
+    }
+}
+
+// Custom task to bundle with Re.Pack webpack instead of Metro
+project.afterEvaluate {
+    tasks.findAll { task ->
+        task.name.contains("createBundle") && task.name.contains("JsAndAssets")
+    }.each { bundleTask ->
+        // Replace the bundle task with our webpack build
+        bundleTask.doFirst {
+            def root = file("../..")
+            def platform = "android"
+            def bundleFile = file("$buildDir/generated/assets/react/${bundleTask.targetName}/index.android.bundle")
+            def resourcesDir = file("$buildDir/generated/res/react/${bundleTask.targetName}")
+            def mode = bundleTask.name.contains("Release") ? "production" : "development"
+            
+            bundleFile.parentFile.mkdirs()
+            resourcesDir.mkdirs()
+            
+            exec {
+                workingDir root
+                commandLine "node", "node_modules/webpack-cli/bin/cli.js", 
+                    "--config", "frontend/webpack.config.mjs",
+                    "--mode", mode,
+                    "--env", "platform=${platform}",
+                    "--env", "mode=${mode}",
+                    "--env", "bundleFilename=${bundleFile.name}",
+                    "--env", "context=${file("../").absolutePath}",
+                    "--env", "entry=./index.js"
+                environment "BABEL_ENV", mode
+                environment "NODE_ENV", mode
+            }
+            
+            // Copy bundle to expected location
+            copy {
+                from file("../build/shell/${platform}")
+                into bundleFile.parentFile
+                include "*.bundle"
+                rename { bundleFile.name }
+            }
+        }
     }
 }
 
