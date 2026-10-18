@@ -98,22 +98,21 @@ dependencies {
     }
 }
 
-// Custom task to bundle with Re.Pack webpack instead of Metro
+// Custom task to bundle with Re.Pack webpack
 project.afterEvaluate {
     tasks.findAll { task ->
         task.name.contains("createBundle") && task.name.contains("JsAndAssets")
     }.each { bundleTask ->
-        // Replace the bundle task with our webpack build
         bundleTask.doFirst {
             def root = file("../..")
             def platform = "android"
-            def bundleFile = file("$buildDir/generated/assets/react/${bundleTask.targetName}/index.android.bundle")
-            def resourcesDir = file("$buildDir/generated/res/react/${bundleTask.targetName}")
             def mode = bundleTask.name.contains("Release") ? "production" : "development"
+            def outputDir = file("${buildDir}/generated/assets/react/release")
+            def bundleFile = file("${outputDir}/index.android.bundle")
             
-            bundleFile.parentFile.mkdirs()
-            resourcesDir.mkdirs()
+            outputDir.mkdirs()
             
+            // Run webpack to build the bundle
             exec {
                 workingDir root
                 commandLine "node", "node_modules/webpack-cli/bin/cli.js", 
@@ -121,19 +120,18 @@ project.afterEvaluate {
                     "--mode", mode,
                     "--env", "platform=${platform}",
                     "--env", "mode=${mode}",
-                    "--env", "bundleFilename=${bundleFile.name}",
+                    "--env", "bundleFilename=index.android.bundle",
                     "--env", "context=${file("../").absolutePath}",
                     "--env", "entry=./index.js"
                 environment "BABEL_ENV", mode
                 environment "NODE_ENV", mode
             }
             
-            // Copy bundle to expected location
+            // Copy webpack output to expected Gradle location
             copy {
                 from file("../build/shell/${platform}")
-                into bundleFile.parentFile
-                include "*.bundle"
-                rename { bundleFile.name }
+                into outputDir
+                include "index.android.bundle"
             }
         }
     }
